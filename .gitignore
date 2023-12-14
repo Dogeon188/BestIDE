@@ -1,0 +1,9 @@
+.DS_Store
+*.vcd
+*.bkp
+*.dtmp
+*.v.out
+v.out
+*.xpr
+.*.v
+*.sh
