@@ -6,4 +6,5 @@
 v.out
 *.xpr
 .*.v
+*_t.v
 *.sh
