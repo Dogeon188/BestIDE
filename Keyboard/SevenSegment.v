@@ -7,22 +7,22 @@ module SevenSegment(
     input wire clk
     );
     
-    reg [15:0] clk_divider;
+    reg [17:0] clk_divider;
 
 
     always @ (posedge clk, posedge rst) begin
         if (rst) begin
-            clk_divider <= 16'b0;
+            clk_divider <= 18'b0;
             AN <= 4'b1110;
         end 
         else begin
-            if(clk_divider == 16'b1111111111111111) begin
+            if(clk_divider == ~18'b0) begin
                 AN <= {AN[2:0], AN[3]};
             end
             else begin
                 AN <= AN;
             end
-            clk_divider <= clk_divider + 16'b1;
+            clk_divider <= clk_divider + 18'b1;
         end
     end
     
@@ -49,7 +49,7 @@ module SevenSegment(
     );
 
 
-    always @(negedge clk_divider[15]) begin
+    always @(*) begin
         case(AN) 
             4'b1110: display <= decode[0];
             4'b1101: display <= decode[1];

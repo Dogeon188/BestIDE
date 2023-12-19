@@ -1,7 +1,8 @@
 module SampleDisplay(
-    output wire [6:0] display,
-    output wire [3:0] digit,
-    output wire been_ready,
+    output [6:0] display,
+    output [3:0] digit,
+    output been_ready,
+    output [7:0] ascii,
     inout wire PS2_DATA,
     inout wire PS2_CLK,
     input wire rst,
@@ -73,6 +74,7 @@ module SampleDisplay(
     
     SevenSegment seven_seg (
         .display(display),
+        .AN(digit),
         .ascii1(prev_ascii),
         .ascii2(ascii),
         .rst(rst),
