@@ -1,7 +1,7 @@
 module SampleDisplay(
     output [6:0] display,
     output [3:0] digit,
-    output been_ready,
+    output pulse_been_ready,
     output [7:0] ascii,
     inout wire PS2_DATA,
     inout wire PS2_CLK,
@@ -60,6 +60,8 @@ module SampleDisplay(
     parameter [8:0] KEY_CODES_X = 9'h022; // X => 22
     parameter [8:0] KEY_CODES_Y = 9'h035; // Y => 35
     parameter [8:0] KEY_CODES_Z = 9'h01A; // Z => 1A
+    parameter [8:0] KEY_CODES_minus = 9'h04E; // - => 4E
+    parameter [8:0] KEY_CODES_equal = 9'h055; // = => 55
 
     
     reg [7:0] prev_ascii, next_prev_ascii;
@@ -72,6 +74,8 @@ module SampleDisplay(
     
     assign shift_down = (key_down[LEFT_SHIFT_CODES] == 1'b1 || key_down[RIGHT_SHIFT_CODES] == 1'b1) ? 1'b1 : 1'b0;
     
+    onepulse op (clk, been_ready, pulse_been_ready);
+
     SevenSegment seven_seg (
         .display(display),
         .AN(digit),
@@ -97,11 +101,12 @@ module SampleDisplay(
             prev_ascii <= 8'h00;
         end 
         else begin
-            ascii <= next_ascii;
-            if(next_ascii != ascii) begin
+            if(pulse_been_ready) begin
+                ascii <= next_ascii;
                 prev_ascii <= ascii;
             end
             else begin
+                ascii <= ascii;
                 prev_ascii <= prev_ascii;
             end
         end
@@ -157,6 +162,8 @@ module SampleDisplay(
                 KEY_CODES_X : next_ascii = shift_down ? 8'h58 : 8'h78;
                 KEY_CODES_Y : next_ascii = shift_down ? 8'h59 : 8'h79;
                 KEY_CODES_Z : next_ascii = shift_down ? 8'h5A : 8'h7A;
+                KEY_CODES_minus : next_ascii = shift_down ? 8'h5F : 8'h2D;
+                KEY_CODES_equal : next_ascii = shift_down ? 8'h2B : 8'h3D;
                 default      : next_ascii = ascii;
             endcase
         end 
