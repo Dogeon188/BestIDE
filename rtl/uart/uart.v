@@ -177,7 +177,7 @@ module Baud_Gen (
     parameter BPS460800 = 9'd216;
     parameter BPStest   = 9'd4;
     
-    parameter baud_rate = BPStest;
+    parameter baud_rate = BPS230400;
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -190,6 +190,8 @@ module Baud_Gen (
                 end else begin
                     tx_cnt <= tx_cnt + 1'd1;
                 end
+            end else begin
+                tx_cnt <= 9'd0;
             end
 
             if (rx_en) begin
@@ -198,6 +200,8 @@ module Baud_Gen (
                 end else begin
                     rx_cnt <= rx_cnt + 1'd1;
                 end
+            end else begin
+                rx_cnt <= 9'd0;
             end
         end
     end
