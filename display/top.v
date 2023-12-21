@@ -46,6 +46,7 @@ module top(
 
     mouse_input mouse_input_inst(
         .clk(clk_25MHz),
+        .rst(rst),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT),
