@@ -18,13 +18,17 @@ module top(
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
     wire [9:0] v_cnt;  //480
-    
+    wire [18:0] pixel_addr = h_cnt + 640 * v_cnt;
+    wire [18:0] write_addr;
     wire enable_mouse_display;
+    wire data;
     wire [9 : 0] MOUSE_X_POS , MOUSE_Y_POS;
     wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT;
     wire [3 : 0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
-    
+    wire mem_pixel;
+    wire [11:0] pixel;
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
+    assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
 
     clock_divisor clk_wiz_0_inst(
       .clk(clk),
@@ -32,20 +36,37 @@ module top(
       .clk17(clk_segment)
     );
 
-   pixel_gen pixel_gen_inst(
-       .h_cnt(h_cnt),
-       .MOUSE_X_POS(MOUSE_X_POS),
+    pixel_gen pixel_gen_inst(
        .valid(valid),
        .enable_mouse_display(enable_mouse_display),
        .mouse_pixel(mouse_pixel),
-       .MOUSE_LEFT(MOUSE_LEFT),
-       .MOUSE_RIGHT(MOUSE_RIGHT),
-       .vgaRed(vgaRed),
-       .vgaGreen(vgaGreen),
-       .vgaBlue(vgaBlue)
+       .mem_pixel(mem_pixel),
+       .pixel(pixel)
     );
+
+    mouse_input mouse_input_inst(
+        .clk(clk_25MHz),
+        .MOUSE_X_POS(MOUSE_X_POS),
+        .MOUSE_Y_POS(MOUSE_Y_POS),
+        .MOUSE_LEFT(MOUSE_LEFT),
+        .MOUSE_RIGHT(MOUSE_RIGHT),
+        .write_addr(write_addr),
+        .write_enable(write_enable),
+        .write_data(data)
+    );
+
+    blk_mem_gen_0 blk_mem_gen_0_inst(
+      .clka(clk_25MHz),
+      .wea(write_enable),
+      .addra(write_addr),
+      .dina(data),
+      .doutb(mem_pixel),
+      .clkb(clk_25MHz),
+      .enb(1'b1),
+      .addrb(pixel_addr)
+    ); 
     
-    segment_display(
+    segment_display seg(
       .clk(clk_segment),
       .MOUSE_X_POS(MOUSE_X_POS),
       .MOUSE_Y_POS(MOUSE_Y_POS),
