@@ -12,7 +12,7 @@ always@(*) begin
     end else if(enable_mouse_display) begin
         pixel = mouse_pixel;
     end else begin
-        pixel = mem_pixel ? 12'h000 : 12'hfff;
+        pixel = mem_pixel ? 12'hfff : 12'h000;
     end
 end
 
