@@ -1,6 +1,6 @@
 module mouse_input(
     input clk, rst,
-    input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS
+    input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS,
     input MOUSE_LEFT, MOUSE_RIGHT,
     output reg [18:0] write_addr,
     output write_enable,
