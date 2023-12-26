@@ -9,11 +9,11 @@ module mouse_input(
     parameter WAIT = 2'b00, WRITE1 = 2'b01, WRITE2 = 2'b11, DONE = 2'b10;
 
     reg [1:0] state, state_next;
-    reg [9:0] prev_mouse_x, prev_mouse_y, next_prev_mouse_x, next_prev_mouse_y;
-    reg [9:0] count, next_count;
-    reg [9:0] end_mouse_x, end_mouse_y, next_end_mouse_x, next_end_mouse_y;
-    reg [9:0] delta_x, delta_y, next_delta_x, next_delta_y;
-    wire [9:0] abs_delta_x, abs_delta_y;
+    reg [10:0] prev_mouse_x, prev_mouse_y, next_prev_mouse_x, next_prev_mouse_y;
+    reg [10:0] count, next_count;
+    reg [10:0] end_mouse_x, end_mouse_y, next_end_mouse_x, next_end_mouse_y;
+    reg signed [10:0] delta_x, delta_y, next_delta_x, next_delta_y;
+    wire [10:0] abs_delta_x, abs_delta_y;
     assign abs_delta_x = delta_x < 0 ? -delta_x : delta_x;
     assign abs_delta_y = delta_y < 0 ? -delta_y : delta_y;
     wire x_is_larger;
@@ -83,7 +83,8 @@ module mouse_input(
                 next_prev_mouse_y = prev_mouse_y;
                 next_count = count + 1;
                 state_next = WRITE1;  
-                write_addr = x_is_larger ? (prev_mouse_x + count) + (prev_mouse_y + count * delta_y / delta_x + 1) * 640 : (prev_mouse_x + count * delta_x / delta_y + 1) + (prev_mouse_y + count) * 640;
+                if(x_is_larger) write_addr = (prev_mouse_x + count) + (prev_mouse_y + count * delta_y / delta_x + (delta_y > 0 ? 1 : -1)) * 640;
+                else write_addr = (prev_mouse_x + count * delta_x / delta_y + (delta_x > 0 ? 1 : -1)) + (prev_mouse_y + count) * 640;
             end
             DONE: begin
                 state_next = WAIT;
