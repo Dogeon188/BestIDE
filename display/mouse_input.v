@@ -2,98 +2,157 @@ module mouse_input(
     input clk, rst,
     input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS,
     input MOUSE_LEFT, MOUSE_RIGHT,
-    output reg [18:0] write_addr,
-    output write_enable,
-    output write_data
+    input new_event,
+    output [18 : 0] write_addr,
+    output wire write_enable,
+    output wire write_data
     );
-    parameter WAIT = 2'b00, WRITE1 = 2'b01, WRITE2 = 2'b11, DONE = 2'b10;
 
-    reg [1:0] state, state_next;
-    reg [9:0] prev_mouse_x, prev_mouse_y, next_prev_mouse_x, next_prev_mouse_y;
-    reg [9:0] count, next_count;
-    reg [9:0] end_mouse_x, end_mouse_y, next_end_mouse_x, next_end_mouse_y;
-    reg [9:0] delta_x, delta_y, next_delta_x, next_delta_y;
-    wire [9:0] abs_delta_x, abs_delta_y;
-    assign abs_delta_x = delta_x < 0 ? -delta_x : delta_x;
-    assign abs_delta_y = delta_y < 0 ? -delta_y : delta_y;
-    wire x_is_larger;
-    reg done;
+    reg [1:0] state, next_state;
+    parameter WAIT = 2'b00, WRITE = 2'b01, DONE = 2'b10;
+    reg [9:0] pre_x_pos, next_pre_x_pos;
+    reg [8:0] pre_y_pos, next_pre_y_pos;
+    reg [9:0] end_x_pos, next_end_x_pos;
+    reg [8:0] end_y_pos, next_end_y_pos;
+    reg [9:0] draw_x_pos, next_draw_x_pos;
+    reg [9:0] draw_y_pos, next_draw_y_pos;
+    reg signed [10:0] delta_x, next_delta_x;
+    reg signed [9:0] delta_y, next_delta_y;
+    wire [9:0] abs_delta_x;
+    wire [8:0] abs_delta_y;
+    reg signed [9:0] D, next_D;
+    assign abs_delta_x = next_delta_x < 0 ? -next_delta_x : next_delta_x;
+    assign abs_delta_y = next_delta_y < 0 ? -next_delta_y : next_delta_y;
+    assign write_addr = {draw_y_pos, draw_x_pos};
     always @ (posedge clk) begin
         if(rst) begin
             state <= WAIT;
-            prev_mouse_x <= 0;
-            prev_mouse_y <= 0;
-            end_mouse_x <= 0;
-            end_mouse_y <= 0;
+            pre_x_pos <= 0;
+            pre_y_pos <= 0;
+            end_x_pos <= 0;
+            end_y_pos <= 0;
             delta_x <= 0;
             delta_y <= 0;
-            count <= 0;
+            D <= 0;
+            draw_x_pos <= 0;
+            draw_y_pos <= 0;
         end
         else begin
-            state <= state_next;
-            prev_mouse_x <= next_prev_mouse_x;
-            prev_mouse_y <= next_prev_mouse_y;
-            end_mouse_x <= next_end_mouse_x;
-            end_mouse_y <= next_end_mouse_y;
+            state <= next_state;
+            pre_x_pos <= next_pre_x_pos;
+            pre_y_pos <= next_pre_y_pos;
+            end_x_pos <= next_end_x_pos;
+            end_y_pos <= next_end_y_pos;
             delta_x <= next_delta_x;
             delta_y <= next_delta_y;
-            count <= next_count;
+            D <= next_D;
+            draw_x_pos <= next_draw_x_pos;
+            draw_y_pos <= next_draw_y_pos;
         end
     end
-    assign write_enable = MOUSE_LEFT || MOUSE_RIGHT;
-    assign write_data = MOUSE_LEFT;
-    assign x_is_larger = (abs_delta_x > abs_delta_y) ? 1 : 0;
-    wire _start = (MOUSE_LEFT || MOUSE_RIGHT) && ( MOUSE_X_POS != end_mouse_x || MOUSE_Y_POS != end_mouse_y);
+    assign write_enable = (MOUSE_LEFT || MOUSE_RIGHT);
+    assign write_data = MOUSE_LEFT && !rst;
+    wire _start = (MOUSE_LEFT || MOUSE_RIGHT) && (MOUSE_X_POS != end_x_pos || MOUSE_Y_POS != end_y_pos);
     always @(*) begin
-        case(state)
-            WAIT: begin
-                next_delta_x = MOUSE_X_POS - end_mouse_x;
-                next_delta_y = MOUSE_Y_POS - end_mouse_y;
-                state_next = _start ? WRITE1 : WAIT;
-                next_prev_mouse_x = _start ? next_prev_mouse_x : MOUSE_X_POS;
-                next_prev_mouse_y =_start ? next_prev_mouse_y : MOUSE_Y_POS;
-                next_count = 0;
-                next_end_mouse_x = MOUSE_X_POS;
-                next_end_mouse_y = MOUSE_Y_POS;
-                write_addr = MOUSE_X_POS + MOUSE_Y_POS * 640;
+        case(state) 
+        WAIT: begin
+            if(new_event) begin
+                next_state = _start ? WRITE : WAIT;
+                next_pre_x_pos = _start ? pre_x_pos : MOUSE_X_POS;
+                next_pre_y_pos = _start ? pre_y_pos : MOUSE_Y_POS;
+                next_end_x_pos = MOUSE_X_POS;
+                next_end_y_pos = MOUSE_Y_POS;
+                next_delta_x = MOUSE_X_POS - pre_x_pos;
+                next_delta_y = MOUSE_Y_POS - pre_y_pos;
+                next_D = (abs_delta_x > abs_delta_y) ? (abs_delta_y << 1) - abs_delta_x : (abs_delta_x << 1) - abs_delta_y;
+                next_draw_x_pos = pre_x_pos;
+                next_draw_y_pos = pre_y_pos;
             end
-            WRITE1: begin
+            else begin
+                next_state = WAIT;
+                next_pre_x_pos = pre_x_pos;
+                next_pre_y_pos = pre_y_pos;
+                next_end_x_pos = end_x_pos;
+                next_end_y_pos = end_y_pos;
                 next_delta_x = delta_x;
                 next_delta_y = delta_y;
-                next_end_mouse_x = end_mouse_x;
-                next_end_mouse_y = end_mouse_y;
-                next_prev_mouse_x = prev_mouse_x;
-                next_prev_mouse_y = prev_mouse_y;
-                next_count = count;
-                if(x_is_larger) begin
-                    state_next = (count == abs_delta_x) ? DONE : WRITE2;
-                    write_addr = (prev_mouse_x + count) + (prev_mouse_y + count * delta_y / delta_x) * 640;
+                next_D = D;
+                next_draw_x_pos = pre_x_pos;
+                next_draw_y_pos = pre_y_pos;
+            end
+        end
+        WRITE: begin
+            if(abs_delta_x > abs_delta_y) begin
+                if(delta_x < 0) begin
+                    next_state = (draw_x_pos - 1) == end_x_pos ? DONE : WRITE;
+                    next_draw_x_pos = draw_x_pos - 1;
+                    if(D > 0) begin
+                        next_draw_y_pos = delta_y < 0 ? draw_y_pos - 1 : draw_y_pos + 1;
+                        next_D = D + (abs_delta_y << 1) - (abs_delta_x << 1);
+                    end
+                    else begin
+                        next_draw_y_pos = draw_y_pos;
+                        next_D = D + (abs_delta_y << 1);
+                    end
                 end
                 else begin
-                    state_next = (count == abs_delta_y) ? DONE : WRITE2;
-                    write_addr = (prev_mouse_x + count * delta_x / delta_y) + (prev_mouse_y + count) * 640;
+                    next_state = (draw_x_pos + 1) == end_x_pos ? DONE : WRITE;
+                    next_draw_x_pos = draw_x_pos + 1;
+                    if(D > 0) begin
+                        next_draw_y_pos = delta_y < 0 ? draw_y_pos - 1 : draw_y_pos + 1;
+                        next_D = D + (abs_delta_y << 1) - (abs_delta_x << 1);
+                    end
+                    else begin
+                        next_draw_y_pos = draw_y_pos;
+                        next_D = D + (abs_delta_y << 1);
+                    end
                 end
             end
-            WRITE2: begin
-                next_delta_x = delta_x;
-                next_delta_y = delta_y;
-                next_end_mouse_x = end_mouse_x;
-                next_end_mouse_y = end_mouse_y;
-                next_prev_mouse_x = prev_mouse_x;
-                next_prev_mouse_y = prev_mouse_y;
-                next_count = count + 1;
-                state_next = WRITE1;  
-                write_addr = x_is_larger ? (prev_mouse_x + count) + (prev_mouse_y + count * delta_y / delta_x + 1) * 640 : (prev_mouse_x + count * delta_x / delta_y + 1) + (prev_mouse_y + count) * 640;
+            else begin
+                if(delta_y < 0) begin
+                    next_state = (draw_y_pos - 1) == end_y_pos ? DONE : WRITE;
+                    next_draw_y_pos = draw_y_pos - 1;
+                    if(D > 0) begin
+                        next_draw_x_pos = delta_x < 0 ? draw_x_pos - 1 : draw_x_pos + 1;
+                        next_D = D + (abs_delta_x << 1) - (abs_delta_y << 1);
+                    end
+                    else begin
+                        next_draw_x_pos = draw_x_pos;
+                        next_D = D + (abs_delta_x << 1);
+                    end
+                end
+                else begin
+                    next_state = (draw_y_pos + 1) == end_y_pos ? DONE : WRITE;
+                    next_draw_y_pos = draw_y_pos + 1;
+                    if(D > 0) begin
+                        next_draw_x_pos = delta_x < 0 ? draw_x_pos - 1 : draw_x_pos + 1;
+                        next_D = D + (abs_delta_x << 1) - (abs_delta_y << 1);
+                    end
+                    else begin
+                        next_draw_x_pos = draw_x_pos;
+                        next_D = D + (abs_delta_x << 1);
+                    end
+                end
             end
-            DONE: begin
-                state_next = WAIT;
-                next_count = 0;
-                write_addr = write_addr;
-                next_prev_mouse_x = end_mouse_x;
-                next_prev_mouse_y = end_mouse_y;
-                next_end_mouse_x = end_mouse_x;
-                next_end_mouse_y = end_mouse_y;
-            end
+            next_pre_x_pos = pre_x_pos;
+            next_pre_y_pos = pre_y_pos;
+            next_delta_x = delta_x;
+            next_delta_y = delta_y;
+            next_end_x_pos = end_x_pos;
+            next_end_y_pos = end_y_pos;
+        end
+        DONE: begin
+            next_state = WAIT;
+            next_pre_x_pos = end_x_pos;
+            next_pre_y_pos = end_y_pos;
+            next_end_x_pos = end_x_pos;
+            next_end_y_pos = end_y_pos;
+            next_delta_x = 0;
+            next_delta_y = 0;
+            next_D = 0;
+            next_draw_x_pos = end_x_pos;
+            next_draw_y_pos = end_y_pos;
+        end
         endcase
     end
 endmodule

@@ -18,17 +18,23 @@ module top(
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
     wire [9:0] v_cnt;  //480
-    wire [18:0] pixel_addr = h_cnt + 640 * v_cnt;
+    wire [18:0] pixel_addr = {v_cnt, h_cnt};
     wire [18:0] write_addr;
     wire enable_mouse_display;
     wire data;
     wire [9 : 0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, extended_MOUSE_NEW_EVENT;
     wire [3 : 0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire mem_pixel;
     wire [11:0] pixel;
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
+
+    extending_signal extending_signal_inst(
+        .clk(~clk),
+        .in(MOUSE_NEW_EVENT),
+        .out(extended_MOUSE_NEW_EVENT)
+    );
 
     clock_divisor clk_wiz_0_inst(
       .clk(clk),
@@ -51,6 +57,7 @@ module top(
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT),
         .MOUSE_RIGHT(MOUSE_RIGHT),
+        .new_event(extended_MOUSE_NEW_EVENT),
         .write_addr(write_addr),
         .write_enable(write_enable),
         .write_data(data)
@@ -121,4 +128,23 @@ module top(
         end
     end
       
+endmodule
+
+
+module extending_signal(clk, in, out);
+    input clk;
+    input in;
+    output out;
+
+    reg [2:0] counter;
+
+    always @(posedge clk) begin
+        if(in) begin
+            counter <= 3'b111;
+        end 
+        else begin
+            counter <= counter[2] ? counter - 1 : counter;
+        end
+    end
+    assign out = counter[2];
 endmodule
