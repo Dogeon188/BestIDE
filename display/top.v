@@ -20,12 +20,12 @@ module top(
     wire [9:0] v_cnt;  //480
     wire [18:0] pixel_addr = {v_cnt, h_cnt};
     wire [18:0] write_addr;
-    wire enable_mouse_display;
+    wire enable_mouse_display, enable_word_display;
     wire data;
     wire [9 : 0] MOUSE_X_POS , MOUSE_Y_POS;
     wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, extended_MOUSE_NEW_EVENT;
     wire [3 : 0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
-    wire mem_pixel;
+    wire mem_pixel, word_pixel;
     wire [11:0] pixel;
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
@@ -37,19 +37,21 @@ module top(
     );
 
     clock_divisor clk_wiz_0_inst(
-      .clk(clk),
-      .clk1(clk_25MHz),
-      .clk17(clk_segment)
+        .clk(clk),
+        .clk1(clk_25MHz),
+        .clk17(clk_segment)
     );
 
     pixel_gen pixel_gen_inst(
-       .valid(valid),
-       .enable_mouse_display(enable_mouse_display),
-       .h_cnt(h_cnt),
-       .v_cnt(v_cnt),
-       .mouse_pixel(mouse_pixel),
-       .mem_pixel(mem_pixel),
-       .pixel(pixel)
+        .valid(valid),
+        .enable_mouse_display(enable_mouse_display),
+        .enable_word_display(enable_word_display),
+        .h_cnt(h_cnt),
+        .v_cnt(v_cnt),
+        .mouse_pixel(mouse_pixel),
+        .word_pixel(word_pixel),
+        .mem_pixel(mem_pixel),
+        .pixel(pixel)
     );
 
     mouse_input mouse_input_inst(
@@ -63,6 +65,13 @@ module top(
         .write_addr(write_addr),
         .write_enable(write_enable),
         .write_data(data)
+    );
+
+    word_display word_display_inst(
+        .h_cnt(h_cnt),
+        .v_cnt(v_cnt),
+        .enable_word_display(enable_word_display),
+        .word_pixel(word_pixel)
     );
 
     blk_mem_gen_0 blk_mem_gen_0_inst(
