@@ -1,10 +1,16 @@
-.DS_Store
+# Workspace
+*_t.v
+*.sh
+test/
+
+# Simulation files
 *.vcd
 *.bkp
 *.dtmp
 *.v.out
-v.out
 *.xpr
+v.out
 .*.v
-*_t.v
-*.sh
+
+# Misc
+.DS_Store
