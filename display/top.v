@@ -45,6 +45,8 @@ module top(
     pixel_gen pixel_gen_inst(
        .valid(valid),
        .enable_mouse_display(enable_mouse_display),
+       .h_cnt(h_cnt),
+       .v_cnt(v_cnt),
        .mouse_pixel(mouse_pixel),
        .mem_pixel(mem_pixel),
        .pixel(pixel)
