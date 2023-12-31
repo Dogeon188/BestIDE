@@ -1,4 +1,4 @@
-module UART_top (
+module UART_Top (
     input wire clk,
     input wire reset,
     input wire rx_in,
@@ -20,7 +20,7 @@ module UART_top (
         .rx_baud(rx_baud)
     );
 
-    UART_rx rs_rx (
+    UART_Rx rs_rx (
         .clk(clk),
         .reset(reset),
         .rx_in(rx_in),
@@ -30,7 +30,7 @@ module UART_top (
         .baud_en(rx_baud_en)
     );
 
-    UART_tx rs_tx (
+    UART_Tx rs_tx (
         .clk(clk),
         .reset(reset),
         .tx_data_valid(tx_data_valid),
@@ -41,7 +41,7 @@ module UART_top (
     );
 endmodule
 
-module UART_rx (
+module UART_Rx (
     input wire clk,
     input wire reset,
     input wire rx_in,
@@ -104,7 +104,7 @@ module UART_rx (
     assign rx_data_valid = (state == S_SHOW) ? 1'b1 : 1'b0;
 endmodule
 
-module UART_tx (
+module UART_Tx (
     input wire clk,
     input wire reset,
     input wire tx_data_valid,
