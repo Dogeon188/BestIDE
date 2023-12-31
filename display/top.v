@@ -70,8 +70,10 @@ module top(
     word_display word_display_inst(
         .h_cnt(h_cnt),
         .v_cnt(v_cnt),
+        .clk(clk_25MHz),
+        .rst(rst),
         .enable_word_display(enable_word_display),
-        .word_pixel(word_pixel)
+        .pixel_data(word_pixel)
     );
 
     blk_mem_gen_0 blk_mem_gen_0_inst(

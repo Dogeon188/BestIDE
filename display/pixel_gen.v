@@ -21,7 +21,7 @@ always@(*) begin
         pixel = mem_pixel ? 12'hccc : 12'h333;
     end
     else if(enable_word_display) begin
-        pixel = word_pixel;
+        pixel = word_pixel ? 12'hfff : 12'h000;
     end
     else begin
         pixel = mem_pixel ? 12'hfff : 12'h000;
