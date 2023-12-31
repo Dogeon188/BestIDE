@@ -16,7 +16,10 @@ module mouse_input(
         if(end_of_editing) begin
             editing <= 1'b0;
         end
-        else if(new_event) begin
+        else if(editing) begin
+            editing <= 1'b1;
+        end
+        else if(new_event && (MOUSE_LEFT || MOUSE_RIGHT)) begin
             editing <= 1'b1;
         end
         else begin

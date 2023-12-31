@@ -18,7 +18,7 @@ module top(
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
     wire [9:0] v_cnt;  //480
-    wire [18:0] pixel_addr = {v_cnt, h_cnt};
+    wire [9:0] pixel_addr = {v_cnt[4:0], h_cnt[4:0]};
     wire [9:0] write_addr;
     wire enable_mouse_display, enable_word_display;
     wire data;
@@ -67,7 +67,7 @@ module top(
         .MOUSE_LEFT(MOUSE_LEFT),
         .MOUSE_RIGHT(MOUSE_RIGHT),
         .new_event(extended_MOUSE_NEW_EVENT),
-        .end_of_editing(0),
+        .end_of_editing(rst),
         .write_addr(write_addr),
         .write_enable(write_enable),
         .write_data(data),
@@ -88,7 +88,7 @@ module top(
     small_canva sc(
         .clka(clk_25MHz),
         .wea(write_enable),
-        .addra(write_addr),
+        .addra(write_addr-2),
         .dina(data),
         .doutb(mem_pixel),
         .clkb(clk_25MHz),
