@@ -3,7 +3,69 @@ module mouse_input(
     input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS,
     input MOUSE_LEFT, MOUSE_RIGHT,
     input new_event,
-    output [18 : 0] write_addr,
+    input end_of_editing,
+    output [9:0] write_addr,
+    output wire write_enable,
+    output wire write_data,
+    output reg [4:0] writing_x, writing_y,
+    output reg editing
+);
+    
+    wire [9:0] write_addr_x, write_addr_y;
+    always @(posedge clk) begin
+        if(end_of_editing) begin
+            editing <= 1'b0;
+        end
+        else if(new_event) begin
+            editing <= 1'b1;
+        end
+        else begin
+            editing <= editing;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(editing) begin
+            writing_x <= writing_x;
+            writing_y <= writing_y;
+        end
+        else if(new_event && (MOUSE_LEFT || MOUSE_RIGHT)) begin
+            writing_x <= MOUSE_X_POS[9:5];
+            writing_y <= MOUSE_Y_POS[9:5];
+        end
+        else begin
+            writing_x <= writing_x;
+            writing_y <= writing_y;
+        end
+    end
+    
+    wire write_en;
+
+    assign write_enable = write_en && write_addr_x[9:5] == writing_x && write_addr_y[9:5] == writing_y;
+    assign write_addr = {write_addr_y[4:0], write_addr_x[4:0]};
+
+    canva_input cv(
+        .clk(clk),
+        .rst(rst),
+        .MOUSE_X_POS(MOUSE_X_POS[9:0]),
+        .MOUSE_Y_POS(MOUSE_Y_POS[9:0]),
+        .MOUSE_LEFT(MOUSE_LEFT),
+        .MOUSE_RIGHT(MOUSE_RIGHT),
+        .new_event(new_event),
+        .write_addr_x(write_addr_x),
+        .write_addr_y(write_addr_y),
+        .write_enable(write_en),
+        .write_data(write_data)
+    );
+endmodule
+
+
+module canva_input(
+    input clk, rst,
+    input [9:0] MOUSE_X_POS, MOUSE_Y_POS,
+    input MOUSE_LEFT, MOUSE_RIGHT,
+    input new_event,
+    output [9:0] write_addr_x, write_addr_y,
     output wire write_enable,
     output wire write_data
     );
@@ -23,7 +85,8 @@ module mouse_input(
     reg signed [9:0] D, next_D;
     assign abs_delta_x = next_delta_x < 0 ? -next_delta_x : next_delta_x;
     assign abs_delta_y = next_delta_y < 0 ? -next_delta_y : next_delta_y;
-    assign write_addr = {draw_y_pos, draw_x_pos};
+    assign write_addr_x = draw_x_pos;
+    assign write_addr_y = draw_y_pos;
     always @ (posedge clk) begin
         if(rst) begin
             state <= WAIT;

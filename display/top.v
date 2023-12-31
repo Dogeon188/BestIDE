@@ -19,16 +19,18 @@ module top(
     wire [9:0] h_cnt; //640
     wire [9:0] v_cnt;  //480
     wire [18:0] pixel_addr = {v_cnt, h_cnt};
-    wire [18:0] write_addr;
+    wire [9:0] write_addr;
     wire enable_mouse_display, enable_word_display;
     wire data;
-    wire [9 : 0] MOUSE_X_POS , MOUSE_Y_POS;
+    wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
     wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, extended_MOUSE_NEW_EVENT;
-    wire [3 : 0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
+    wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire mem_pixel, word_pixel;
     wire [11:0] pixel;
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
+    wire [4:0] writing_x, writing_y;
+    wire editing;
 
     extending_signal extending_signal_inst(
         .clk(~clk),
@@ -51,7 +53,10 @@ module top(
         .mouse_pixel(mouse_pixel),
         .word_pixel(word_pixel),
         .mem_pixel(mem_pixel),
-        .pixel(pixel)
+        .pixel(pixel),
+        .writing_x(writing_x),
+        .writing_y(writing_y),
+        .editing(editing)
     );
 
     mouse_input mouse_input_inst(
@@ -62,9 +67,13 @@ module top(
         .MOUSE_LEFT(MOUSE_LEFT),
         .MOUSE_RIGHT(MOUSE_RIGHT),
         .new_event(extended_MOUSE_NEW_EVENT),
+        .end_of_editing(0),
         .write_addr(write_addr),
         .write_enable(write_enable),
-        .write_data(data)
+        .write_data(data),
+        .writing_x(writing_x),
+        .writing_y(writing_y),
+        .editing(editing)
     );
 
     word_display word_display_inst(
@@ -76,15 +85,15 @@ module top(
         .pixel_data(word_pixel)
     );
 
-    blk_mem_gen_0 blk_mem_gen_0_inst(
-      .clka(clk_25MHz),
-      .wea(write_enable),
-      .addra(write_addr),
-      .dina(data),
-      .doutb(mem_pixel),
-      .clkb(clk_25MHz),
-      .enb(1'b1),
-      .addrb(pixel_addr)
+    small_canva sc(
+        .clka(clk_25MHz),
+        .wea(write_enable),
+        .addra(write_addr),
+        .dina(data),
+        .doutb(mem_pixel),
+        .clkb(clk_25MHz),
+        .enb(1'b1),
+        .addrb(pixel_addr)
     ); 
     
     segment_display seg(
