@@ -3,17 +3,30 @@ module mouse_input(
     input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS,
     input MOUSE_LEFT, MOUSE_RIGHT,
     input new_event,
-    input end_of_editing,
+    input ready_to_clear,
     output [9:0] write_addr,
     output wire write_enable,
     output wire write_data,
     output reg [4:0] writing_x, writing_y,
     output reg editing
 );
-    
+    reg [9:0] counter;
+
+    always @(posedge clk) begin
+        if(rst) begin
+            counter <= 10'b0;
+        end
+        else if(ready_to_clear) begin
+            counter <= ~10'b0;
+        end
+        else if(counter) begin
+            counter <= counter - 1;
+        end
+    end
+
     wire [9:0] write_addr_x, write_addr_y;
     always @(posedge clk) begin
-        if(end_of_editing) begin
+        if(ready_to_clear || counter) begin
             editing <= 1'b0;
         end
         else if(editing) begin
@@ -32,7 +45,7 @@ module mouse_input(
             writing_x <= writing_x;
             writing_y <= writing_y;
         end
-        else if(new_event && (MOUSE_LEFT || MOUSE_RIGHT)) begin
+        else if(new_event && (MOUSE_LEFT || MOUSE_RIGHT) && counter == 10'd0) begin
             writing_x <= MOUSE_X_POS[9:5];
             writing_y <= MOUSE_Y_POS[9:5];
         end
@@ -44,8 +57,8 @@ module mouse_input(
     
     wire write_en;
 
-    assign write_enable = write_en && write_addr_x[9:5] == writing_x && write_addr_y[9:5] == writing_y;
-    assign write_addr = {write_addr_y[4:0], write_addr_x[4:0]};
+    assign write_enable = end_of_editing || counter || (write_en && write_addr_x[9:5] == writing_x && write_addr_y[9:5] == writing_y);
+    assign write_addr = end_of_editing ? 0 : counter ? counter : {write_addr_y[4:0], write_addr_x[4:0]};
 
     canva_input cv(
         .clk(clk),

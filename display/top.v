@@ -1,6 +1,7 @@
 module top(
    input clk,
    input rst,
+   input end_of_editing,
    output [3:0] vgaRed,
    output [3:0] vgaGreen,
    output [3:0] vgaBlue,
@@ -8,12 +9,11 @@ module top(
    output vsync,
    output [3:0]AN,
    output [6:0]SEG,
-   inout PS2_CLK,
-   inout PS2_DATA
+   inout wire PS2_CLK,
+   inout wire PS2_DATA
 );
 
-    wire clk_25MHz;
-    wire clk_segment;
+    wire clk_25MHz, clk_segment;
     wire valid;
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
@@ -21,7 +21,7 @@ module top(
     wire [9:0] pixel_addr = {v_cnt[4:0], h_cnt[4:0]};
     wire [9:0] write_addr;
     wire enable_mouse_display, enable_word_display;
-    wire data;
+    wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
     wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, extended_MOUSE_NEW_EVENT;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
@@ -30,12 +30,37 @@ module top(
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
     wire [4:0] writing_x, writing_y;
+    wire [7:0] read_out_data;
     wire editing;
+    wire ready_to_clear;
+    wire [9:0] a_port;
+    wire [9:0] read_out_canvas_addr;
+    wire spo;
+    wire rst_debounced, rst_onepulse, rst_extending_signal;
+    assign a_port = write_enable ? write_addr : read_out_canvas_addr;
 
     extending_signal extending_signal_inst(
         .clk(~clk),
         .in(MOUSE_NEW_EVENT),
         .out(extended_MOUSE_NEW_EVENT)
+    );
+
+    debounce debounce_inst(
+        .clk(clk),
+        .in(rst),
+        .out(rst_debounced)
+    );
+
+    onepulse onepulse_inst(
+        .clk(clk),
+        .in(rst_debounced),
+        .out(rst_onepulse)
+    );
+
+    extending_signal extending_signal_inst2(
+        .clk(~clk),
+        .in(rst_onepulse),
+        .out(rst_extending_signal)
     );
 
     clock_divisor clk_wiz_0_inst(
@@ -61,16 +86,16 @@ module top(
 
     mouse_input mouse_input_inst(
         .clk(clk_25MHz),
-        .rst(rst),
+        .rst(rst_extending_signal),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT),
         .MOUSE_RIGHT(MOUSE_RIGHT),
         .new_event(extended_MOUSE_NEW_EVENT),
-        .end_of_editing(rst),
+        .ready_to_clear(ready_to_clear),
         .write_addr(write_addr),
         .write_enable(write_enable),
-        .write_data(data),
+        .write_data(mouse_input_data),
         .writing_x(writing_x),
         .writing_y(writing_y),
         .editing(editing)
@@ -81,19 +106,25 @@ module top(
         .v_cnt(v_cnt),
         .clk(clk_25MHz),
         .rst(rst),
+        .write_addr({write_addr_y[3:0], write_addr_x}),
+        .write_in_data(0),
+        .write_ready(0),
+        .read_enable(0),
+        .read_addr(0),
+        .clear_data(1'b0),
+        .pixel_data(word_pixel),
         .enable_word_display(enable_word_display),
-        .pixel_data(word_pixel)
+        .read_out_data(read_out_data)
     );
 
     small_canva sc(
-        .clka(clk_25MHz),
-        .wea(write_enable),
-        .addra(write_addr-2),
-        .dina(data),
-        .doutb(mem_pixel),
-        .clkb(clk_25MHz),
-        .enb(1'b1),
-        .addrb(pixel_addr)
+        .a(write_addr),
+        .d(mouse_input_data),
+        .dpra(pixel_addr),
+        .clk(clk_25MHz),
+        .we(write_enable),
+        .spo(spo),
+        .dpo(mem_pixel)
     ); 
     
     segment_display seg(
@@ -107,7 +138,7 @@ module top(
 
     vga_controller vga_inst(
       .pclk(clk_25MHz),
-      .reset(rst),
+      .reset(rst_extending_signal),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
@@ -169,4 +200,31 @@ module extending_signal(clk, in, out);
         end
     end
     assign out = counter[2];
+endmodule
+
+module debounce(clk, in, out);
+    input clk, in;
+    output out;
+
+    reg [3:0] DFF;
+
+    always @(posedge clk) begin
+        DFF <= {DFF[2:0], in};
+    end
+
+    assign out = DFF[3] & DFF[2] & DFF[1] & DFF[0];
+endmodule
+
+module onepulse(clk, in, out);
+    input clk, in;
+    output out;
+
+    reg A;
+
+    always @(posedge clk) begin
+        A <= in;
+    end
+
+    assign out = ~A & in;
+
 endmodule
