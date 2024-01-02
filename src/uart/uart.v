@@ -6,12 +6,13 @@ module UART_Top (
     output wire [7:0] rx_data,
     input wire tx_data_valid,
     input wire [7:0] tx_data,
-    output wire tx_out
+    output wire tx_out,
+    output wire tx_ready
 );
 
     wire tx_baud_en, rx_baud_en;
     wire tx_baud, rx_baud;
-    Baud_Gen bg (
+    baud_gen bg (
         .clk(clk),
         .reset(reset),
         .tx_en(tx_baud_en),
@@ -20,7 +21,7 @@ module UART_Top (
         .rx_baud(rx_baud)
     );
 
-    UART_Rx rs_rx (
+    uart_rx rs_rx (
         .clk(clk),
         .reset(reset),
         .rx_in(rx_in),
@@ -30,18 +31,19 @@ module UART_Top (
         .baud_en(rx_baud_en)
     );
 
-    UART_Tx rs_tx (
+    uart_tx rs_tx (
         .clk(clk),
         .reset(reset),
         .tx_data_valid(tx_data_valid),
         .tx_data(tx_data),
         .baud_clk(tx_baud),
         .tx_out(tx_out),
-        .baud_en(tx_baud_en)
+        .baud_en(tx_baud_en),
+        .tx_ready(tx_ready)
     );
 endmodule
 
-module UART_Rx (
+module uart_rx (
     input wire clk,
     input wire reset,
     input wire rx_in,
@@ -104,14 +106,15 @@ module UART_Rx (
     assign rx_data_valid = (state == S_SHOW) ? 1'b1 : 1'b0;
 endmodule
 
-module UART_Tx (
+module uart_tx (
     input wire clk,
     input wire reset,
     input wire tx_data_valid,
     input wire [7:0] tx_data,
     input wire baud_clk,
     output reg tx_out,
-    output reg baud_en
+    output reg baud_en,
+    output wire tx_ready
 );
     // UART internal state
     reg state;
@@ -121,6 +124,8 @@ module UART_Tx (
 
     parameter S_IDLE = 1'b0;
     parameter S_SEND = 1'b1;
+
+    assign tx_ready = (state == S_IDLE);
 
     // Initialize internal state and registers
     always @(posedge clk or posedge reset) begin
@@ -161,7 +166,7 @@ module UART_Tx (
     end
 endmodule
 
-module Baud_Gen (
+module baud_gen (
     input wire clk, // 100 MHz
     input wire reset,
     input wire tx_en,
