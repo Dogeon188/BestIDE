@@ -43,7 +43,7 @@ module top(
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse, rst_extending_signal;
+    wire rst_debounced, rst_onepulse;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
     wire [8:0] doc_a;
@@ -60,21 +60,15 @@ module top(
     );
 
     debounce debounce_inst(
-        .clk(clk),
+        .clk(clk_25MHz),
         .in(rst),
         .out(rst_debounced)
     );
 
     onepulse onepulse_inst(
-        .clk(clk),
+        .clk(clk_25MHz),
         .in(rst_debounced),
         .out(rst_onepulse)
-    );
-
-    extending_signal extending_signal_inst2(
-        .clk(~clk),
-        .in(rst_onepulse),
-        .out(rst_extending_signal)
     );
 
     clock_divisor clk_wiz_0_inst(
@@ -102,7 +96,7 @@ module top(
 
     mouse_input mouse_input_inst(
         .clk(clk_25MHz),
-        .rst(rst_extending_signal),
+        .rst(rst_onepulse),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT),
@@ -119,7 +113,7 @@ module top(
 
     recognizer recognizer_inst(
         .clk(clk_25MHz),
-        .rst(rst_extending_signal),
+        .rst(rst_onepulse),
         .end_write(MOUSE_MIDDLE),
         .read_in_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
@@ -180,7 +174,7 @@ module top(
 
     vga_controller vga_inst(
       .pclk(clk_25MHz),
-      .reset(rst_extending_signal),
+      .reset(rst_onepulse),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
