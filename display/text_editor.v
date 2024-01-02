@@ -1,27 +1,56 @@
 module text_editor(
-    input [9:0] h_cnt,
-    input [8:0] v_cnt,
+    input [8:0] vga_block,
     input clk, rst,
     input [8:0] write_addr,
     input [7:0] write_in_data,
     input write_ready, read_enable,
+    input [8:0] read_out_addr,
     input clear_data,
+    input MOUSE_RIGHT,
+    input editing,
+    input [8:0] mouse_block_pos,
     output wire enable_word_display,
-    output wire [8:0] a,
-    output wire [7:0] text_write,
+    output reg [8:0] a,
+    output reg [7:0] text_write,
     output wire we
 );
 
     reg [19:0] is_written [14:0];
     reg [8:0] counter;
-    assign enable_word_display = is_written[v_cnt[8:5]][h_cnt[9:5]];
-    wire [6:0] data;
-    wire [0:15] pixels;
-    wire [8:0] doc_addr = {v_cnt[8:5], h_cnt[9:5]};
-    assign text_write = counter ? 8'd0 : write_in_data;
-    assign we = clear_data || rst || counter || write_ready;
-    assign a = we ? (clear_data || rst) ? 9'd0 : counter ? counter : write_addr : doc_addr;
-
+    assign enable_word_display = is_written[vga_block[8:5]][vga_block[4:0]];
+    assign we = !read_enable && (MOUSE_RIGHT || clear_data || rst || counter || write_ready);
+    always @(*) begin
+        if(we) begin
+            if(clear_data || rst) begin
+                a = 9'd0;
+                text_write = 8'd0;
+            end
+            else if (counter) begin
+                a = counter;
+                text_write = 8'd0;
+            end
+            else if (write_ready) begin
+                a = write_addr;
+                text_write = write_in_data;
+            end
+            else if (!editing) begin
+                a = mouse_block_pos;
+                text_write = 8'd0;
+            end
+            else if(MOUSE_RIGHT) begin
+                a = write_addr;
+                text_write = 8'd0;
+            end
+            else begin
+                a = mouse_block_pos;
+                text_write = write_in_data;
+            end
+        end
+        else begin
+            a = read_out_addr;
+            text_write = 8'd0;
+        end
+    end
 
     always @(posedge clk) begin
         if(rst || clear_data) begin
@@ -52,6 +81,14 @@ module text_editor(
             is_written[12] <= 20'd0;
             is_written[13] <= 20'd0;
             is_written[14] <= 20'd0;
+        end
+        else if (MOUSE_RIGHT) begin
+            if(editing) begin
+                is_written[write_addr[8:5]][write_addr[4:0]] <= 0;
+            end
+            else begin
+                is_written[mouse_block_pos[8:5]][mouse_block_pos[4:0]] <= 0;
+            end
         end
         else if (write_ready) begin
             is_written[write_addr[8:5]][write_addr[4:0]] <= 1;

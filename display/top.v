@@ -34,22 +34,22 @@ module top(
     wire [3:0] writing_block_y_pos;
     wire [7:0] UART_out_data;
     wire block_editing;
-    wire [9:0] UART_out_addr; 
-    wire UART_enable_read;
-    wire UART_done;
+    wire [9:0] UART_out_addr = 0; 
+    wire UART_enable_read = 0;
+    wire UART_done = 0;
     wire ready_to_clear_canvas;
     wire [9:0] small_canvas_addr;
     wire [6:0] font_index;
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse;
+    wire rst_debounced, rst_onepulse, rst_extending_signal;
+    wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
     wire [8:0] doc_a;
     wire [7:0] doc_d;
     wire doc_we;
-    wire canvas_read_enable;
     wire [7:0] text_write;
     wire canvas_write_enable = mouse_write_enable && ~canvas_read_enable;
     wire [7:0] doc_write_in_data;
@@ -60,15 +60,21 @@ module top(
     );
 
     debounce debounce_inst(
-        .clk(clk_25MHz),
+        .clk(clk),
         .in(rst),
         .out(rst_debounced)
     );
 
     onepulse onepulse_inst(
-        .clk(clk_25MHz),
+        .clk(clk),
         .in(rst_debounced),
         .out(rst_onepulse)
+    );
+
+    extending_signal extending_signal_inst2(
+        .clk(~clk),
+        .in(rst_onepulse),
+        .out(rst_extending_signal)
     );
 
     clock_divisor clk_wiz_0_inst(
@@ -96,7 +102,7 @@ module top(
 
     mouse_input mouse_input_inst(
         .clk(clk_25MHz),
-        .rst(rst_onepulse),
+        .rst(rst_extending_signal),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT),
@@ -113,8 +119,8 @@ module top(
 
     recognizer recognizer_inst(
         .clk(clk_25MHz),
-        .rst(rst_onepulse),
-        .end_write(MOUSE_MIDDLE),
+        .rst(rst_extending_signal),
+        .end_write(MOUSE_MIDDLE & block_editing),
         .read_in_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
         .read_enable(canvas_read_enable),
@@ -123,17 +129,20 @@ module top(
     );
 
     text_editor text_editor_inst(
-        .h_cnt(h_cnt),
-        .v_cnt(v_cnt),
+        .vga_block({v_cnt[8:5], h_cnt[9:5]}),
         .clk(clk_25MHz),
         .rst(rst),
         .write_addr({writing_block_y_pos, writing_block_x_pos}),
         .write_in_data(doc_write_in_data),
         .write_ready(ready_to_clear_canvas),
         .read_enable(UART_enable_read),
+        .read_out_addr(UART_out_addr),
         .clear_data(UART_done),
         .enable_word_display(enable_word_display),
+        .mouse_block_pos({MOUSE_Y_POS[8:5], MOUSE_X_POS[9:5]}),
         .a(doc_a),
+        .MOUSE_RIGHT(MOUSE_RIGHT),
+        .editing(block_editing),
         .text_write(text_write),
         .we(doc_we)
     );
@@ -146,10 +155,10 @@ module top(
     document document(
         .a(doc_a),
         .d(text_write),
-        .dpra(UART_out_addr),
+        .dpra({v_cnt[8:5], h_cnt[9:5]}),
         .we(doc_we),
-        .spo(font_index),
-        .dpo(UART_out_data),
+        .spo(UART_out_data),
+        .dpo(font_index),
         .clk(clk_25MHz)
     );
 
@@ -174,7 +183,7 @@ module top(
 
     vga_controller vga_inst(
       .pclk(clk_25MHz),
-      .reset(rst_onepulse),
+      .reset(rst_extending_signal),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),

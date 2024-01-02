@@ -17,12 +17,12 @@ module recognizer(
             data_ready <= 1'b0;
         end
         else if(end_write) begin
-            canvas[read_addr[9:5]][read_addr[4:0]] <= read_in_data[7:0];
+            canvas[read_addr[9:5]][read_addr[4:0]] <= read_in_data;
             counter <= 10'd1;
             data_ready <= 1'b0;
         end
         else if(counter) begin
-            canvas[read_addr[9:5]][read_addr[4:0]] <= read_in_data[7:0];
+            canvas[read_addr[9:5]][read_addr[4:0]] <= read_in_data;
             counter <= counter + 1;
             if(counter == ~10'd0) begin
                 data_ready <= 1'b1;
