@@ -95,6 +95,8 @@ module top(
         .pixel_color(pixel_color),
         .writing_block_x_pos(writing_block_x_pos),
         .writing_block_y_pos(writing_block_y_pos),
+        .MOUSE_X_POS(MOUSE_X_POS),
+        .MOUSE_Y_POS(MOUSE_Y_POS),
         .editing(block_editing)
     );
 
@@ -143,9 +145,8 @@ module top(
     );
     
     fonts fonts(
-        .addra({font_index, v_cnt[4:1]}),
-        .douta(font_pixels),
-        .clka(clk_25MHz)
+        .a({font_index, v_cnt[4:1]}),
+        .spo(font_pixels)
     );
 
     document document(
