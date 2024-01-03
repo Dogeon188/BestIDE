@@ -45,9 +45,8 @@ module recognizer(
         else pending = pending;
     end
 
-
-    assign ready_to_write = data_ready;
-    assign write_data = 8'd65;
+    assign result_valid = data_ready;
+    assign result = 8'd65;
     assign read_enable = in_start || counter;
     assign read_addr = counter;
 endmodule
