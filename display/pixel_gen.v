@@ -7,13 +7,15 @@ module pixel_gen(
     input [11:0] mouse_pixel,
     input canvas_vga_pixel,
     input word_pixel,
-    input [4:0] writing_block_x_pos,
-    input [3:0] writing_block_y_pos,
+    input [8:0] writing_block_pos,
     input editing,
     input [9:0] MOUSE_X_POS,
     input [8:0] MOUSE_Y_POS,
     output reg [11:0] pixel_color
 );
+
+wire [4:0] writing_block_x_pos = writing_block_pos[4:0];
+wire [3:0] writing_block_y_pos = writing_block_pos[8:5];
 
 always@(*) begin
     if(!valid) begin

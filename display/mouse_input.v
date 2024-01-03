@@ -7,11 +7,13 @@ module mouse_input(
     output [9:0] write_addr,
     output wire write_enable,
     output wire write_data,
-    output reg [4:0] writing_block_x_pos, writing_block_y_pos,
+    output wire [8:0] writing_block_pos,
     output reg editing
 );
     reg [9:0] counter;
-
+    reg [4:0] writing_block_x_pos;
+    reg [3:0] writing_block_y_pos;
+    assign writing_block_pos = {writing_block_y_pos, writing_block_x_pos};
     always @(posedge clk) begin
         if(rst) begin
             counter <= 10'b0;

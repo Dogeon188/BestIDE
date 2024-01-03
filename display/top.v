@@ -30,8 +30,7 @@ module top(
     wire [0:15] font_pixels;
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel_color:12'h0;
-    wire [4:0] writing_block_x_pos;
-    wire [3:0] writing_block_y_pos;
+    wire [8:0] writing_block_pos;
     wire [7:0] UART_out_data;
     wire block_editing;
     wire [9:0] UART_out_addr = 0; 
@@ -94,8 +93,7 @@ module top(
         .word_pixel(word_pixel),
         .canvas_vga_pixel(canvas_vga_pixel),
         .pixel_color(pixel_color),
-        .writing_block_x_pos(writing_block_x_pos),
-        .writing_block_y_pos(writing_block_y_pos),
+        .writing_block_pos(writing_block_pos),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .editing(block_editing)
@@ -113,8 +111,7 @@ module top(
         .write_addr(write_addr),
         .write_enable(mouse_write_enable),
         .write_data(mouse_input_data),
-        .writing_block_x_pos(writing_block_x_pos),
-        .writing_block_y_pos(writing_block_y_pos),
+        .writing_block_pos(writing_block_pos),
         .editing(block_editing)
     );
 
@@ -134,7 +131,7 @@ module top(
         .vga_block({v_cnt[8:5], h_cnt[9:5]}),
         .clk(clk_25MHz),
         .rst(rst),
-        .write_addr({writing_block_y_pos, writing_block_x_pos}),
+        .write_addr(writing_block_pos),
         .write_in_data(doc_write_in_data),
         .write_ready(ready_to_clear_canvas),
         .read_enable(UART_enable_read),
