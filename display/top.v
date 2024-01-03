@@ -53,6 +53,7 @@ module top(
     wire [7:0] text_write;
     wire canvas_write_enable = mouse_write_enable && ~canvas_read_enable;
     wire [7:0] doc_write_in_data;
+    wire recognizer_pending;
     extending_signal extending_signal_inst(
         .clk(~clk),
         .in(MOUSE_NEW_EVENT),
@@ -105,8 +106,8 @@ module top(
         .rst(rst_extending_signal),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
-        .MOUSE_LEFT(MOUSE_LEFT),
-        .MOUSE_RIGHT(MOUSE_RIGHT),
+        .MOUSE_LEFT(MOUSE_LEFT & recognizer_pending),
+        .MOUSE_RIGHT(MOUSE_RIGHT & recognizer_pending),
         .new_event(extended_MOUSE_NEW_EVENT),
         .ready_to_clear_canvas(ready_to_clear_canvas),
         .write_addr(write_addr),
@@ -125,7 +126,8 @@ module top(
         .read_addr(read_out_canvas_addr),
         .read_enable(canvas_read_enable),
         .ready_to_write(ready_to_clear_canvas),
-        .write_data(doc_write_in_data)
+        .write_data(doc_write_in_data),
+        .recognizer_pending(recognizer_pending)
     );
 
     text_editor text_editor_inst(
@@ -141,7 +143,7 @@ module top(
         .enable_word_display(enable_word_display),
         .mouse_block_pos({MOUSE_Y_POS[8:5], MOUSE_X_POS[9:5]}),
         .a(doc_a),
-        .MOUSE_RIGHT(MOUSE_RIGHT),
+        .MOUSE_RIGHT(MOUSE_RIGHT & recognizer_pending),
         .editing(block_editing),
         .text_write(text_write),
         .we(doc_we)

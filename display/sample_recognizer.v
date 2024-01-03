@@ -5,7 +5,8 @@ module recognizer(
     output [9:0] read_addr,
     output wire read_enable,
     output wire ready_to_write,
-    output wire [7:0] write_data
+    output wire [7:0] write_data,
+    output reg recognizer_pending
 );
 
     reg [31:0] canvas [31:0];
@@ -35,6 +36,13 @@ module recognizer(
             counter <= 10'd0;
             data_ready <= 1'b0;
         end
+    end
+
+    always @(*) begin
+        if(rst) recognizer_pending = 1'b0;
+        else if(end_write) recognizer_pending = 1'b1;
+        else if(data_ready) recognizer_pending = 1'b0;
+        else recognizer_pending = recognizer_pending;
     end
 
 

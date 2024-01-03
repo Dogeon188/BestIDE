@@ -27,7 +27,7 @@ always@(*) begin
             pixel_color = 12'h0df;
         end
         else begin
-            pixel_color = canvas_vga_pixel ? 12'hfff : 12'h000;
+            pixel_color = canvas_vga_pixel ? 12'hddd : 12'h000;
         end
     end
     else if(h_cnt[4:0] == 0 || h_cnt[4:0] == 31 || v_cnt[4:0] == 0 || v_cnt[4:0] == 31) begin
@@ -40,7 +40,7 @@ always@(*) begin
     end
     else if(enable_word_display) begin
         if(word_pixel) begin
-            pixel_color = 12'hfff;
+            pixel_color = 12'hddd;
         end
         else begin
             pixel_color = 12'h000;
