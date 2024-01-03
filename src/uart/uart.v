@@ -1,4 +1,4 @@
-module UART_Top (
+module uart_top (
     input wire clk,
     input wire reset,
     input wire rx_in,

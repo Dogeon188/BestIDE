@@ -121,13 +121,13 @@ module top(
     recognizer recognizer_inst(
         .clk(clk_25MHz),
         .rst(rst_extending_signal),
-        .end_write(MOUSE_MIDDLE & block_editing),
-        .read_in_data(recognizer_read_in_data),
+        .in_start(MOUSE_MIDDLE & block_editing),
+        .read_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
         .read_enable(canvas_read_enable),
-        .ready_to_write(ready_to_clear_canvas),
-        .write_data(doc_write_in_data),
-        .recognizer_pending(recognizer_pending)
+        .result_valid(ready_to_clear_canvas),
+        .result(doc_write_in_data),
+        .pending(recognizer_pending)
     );
 
     text_editor text_editor_inst(
