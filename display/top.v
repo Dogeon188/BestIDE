@@ -12,8 +12,6 @@ module top(
     inout wire PS2_CLK,
     inout wire PS2_DATA
 );
-
-    wire clk_25MHz, clk_segment;
     wire valid;
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
@@ -23,7 +21,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, extended_MOUSE_NEW_EVENT;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -42,7 +40,7 @@ module top(
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse, rst_extending_signal;
+    wire rst_debounced, rst_onepulse;
     wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
@@ -53,11 +51,6 @@ module top(
     wire canvas_write_enable = mouse_write_enable && ~canvas_read_enable;
     wire [7:0] doc_write_in_data;
     wire recognizer_pending;
-    extending_signal extending_signal_inst(
-        .clk(~clk),
-        .in(MOUSE_NEW_EVENT),
-        .out(extended_MOUSE_NEW_EVENT)
-    );
 
     debounce debounce_inst(
         .clk(clk),
@@ -69,18 +62,6 @@ module top(
         .clk(clk),
         .in(rst_debounced),
         .out(rst_onepulse)
-    );
-
-    extending_signal extending_signal_inst2(
-        .clk(~clk),
-        .in(rst_onepulse),
-        .out(rst_extending_signal)
-    );
-
-    clock_divisor clk_wiz_0_inst(
-        .clk(clk),
-        .clk1(clk_25MHz),
-        .clk17(clk_segment)
     );
 
     pixel_gen pixel_gen_inst(
@@ -100,13 +81,13 @@ module top(
     );
 
     mouse_input mouse_input_inst(
-        .clk(clk_25MHz),
-        .rst(rst_extending_signal),
+        .clk(clk),
+        .rst(rst_onepulse),
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT & ~recognizer_pending),
         .MOUSE_RIGHT(MOUSE_RIGHT & ~recognizer_pending),
-        .new_event(extended_MOUSE_NEW_EVENT),
+        .new_event(MOUSE_NEW_EVENT),
         .ready_to_clear_canvas(ready_to_clear_canvas),
         .write_addr(write_addr),
         .write_enable(mouse_write_enable),
@@ -116,8 +97,8 @@ module top(
     );
 
     recognizer recognizer_inst(
-        .clk(clk_25MHz),
-        .rst(rst_extending_signal),
+        .clk(clk),
+        .rst(rst_onepulse),
         .in_start(MOUSE_MIDDLE & block_editing),
         .read_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
@@ -129,7 +110,7 @@ module top(
 
     text_editor text_editor_inst(
         .vga_block({v_cnt[8:5], h_cnt[9:5]}),
-        .clk(clk_25MHz),
+        .clk(clk),
         .rst(rst),
         .write_addr(writing_block_pos),
         .write_in_data(doc_write_in_data),
@@ -158,31 +139,22 @@ module top(
         .we(doc_we),
         .spo(UART_out_data),
         .dpo(font_index),
-        .clk(clk_25MHz)
+        .clk(clk)
     );
 
     small_canvas sc(
         .a(small_canvas_addr),
         .d(mouse_input_data),
         .dpra(pixel_addr),
-        .clk(clk_25MHz),
+        .clk(clk),
         .we(canvas_write_enable),
         .spo(recognizer_read_in_data),
         .dpo(canvas_vga_pixel)
     );
-    
-    segment_display seg(
-      .clk(clk_segment),
-      .MOUSE_X_POS(MOUSE_X_POS),
-      .MOUSE_Y_POS(MOUSE_Y_POS),
-      .isX(isX),
-      .AN(AN),
-      .SEG(SEG)
-    );
 
     vga_controller vga_inst(
-      .pclk(clk_25MHz),
-      .reset(rst_extending_signal),
+      .pclk(clk),
+      .reset(rst_onepulse),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
@@ -225,25 +197,6 @@ module top(
         end
     end
       
-endmodule
-
-
-module extending_signal(clk, in, out);
-    input clk;
-    input in;
-    output out;
-
-    reg [2:0] counter;
-
-    always @(posedge clk) begin
-        if(in) begin
-            counter <= 3'b111;
-        end 
-        else begin
-            counter <= counter[2] ? counter - 1 : counter;
-        end
-    end
-    assign out = counter[2];
 endmodule
 
 module debounce(clk, in, out);

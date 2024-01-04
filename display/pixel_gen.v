@@ -26,7 +26,7 @@ always@(*) begin
     end 
     else if(editing && h_cnt[9:5] == writing_block_x_pos && v_cnt[8:5] == writing_block_y_pos) begin
         if(h_cnt[4:0] == 0 || h_cnt[4:0] == 31 || v_cnt[4:0] == 0 || v_cnt[4:0] == 31) begin
-            pixel_color = 12'h0df;
+            pixel_color = 12'he72;
         end
         else begin
             pixel_color = canvas_vga_pixel ? 12'hddd : 12'h000;
