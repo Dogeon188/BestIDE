@@ -1,3 +1,8 @@
+; IP:    Distributed Memory Generator (ROM)
+; Name:  mem_conv_b
+; Depth: 352
+; Width: 16
+
 memory_initialization_radix = 16;
 memory_initialization_vector = 
 ; dense2 (96,)

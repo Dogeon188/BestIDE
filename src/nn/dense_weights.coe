@@ -1,3 +1,9 @@
+; IP:     Block Memory Generator (Dual Port ROM)
+; Name:   mem_conv_b
+; WidthA: 128
+; DepthA: 4224
+; WidthB: 128
+
 memory_initialization_radix = 16;
 memory_initialization_vector = 
 ; dense2 (8, 32, 96)
