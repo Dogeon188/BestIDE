@@ -1,5 +1,5 @@
 ; IP:     Block Memory Generator (Dual Port ROM)
-; Name:   mem_dense_b
+; Name:   mem_dense_w
 ; WidthA: 128
 ; DepthA: 4224
 ; WidthB: 128
