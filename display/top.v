@@ -21,7 +21,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -64,6 +64,12 @@ module top(
         .out(rst_onepulse)
     );
 
+    onepulse onepulse_inst2(
+        .clk(clk),
+        .in(MOUSE_MIDDLE),
+        .out(MOUSE_MIDDLE_onepulse)
+    );
+
     pixel_gen pixel_gen_inst(
         .valid(valid),
         .enable_mouse_display(enable_mouse_display),
@@ -99,7 +105,7 @@ module top(
     recognizer recognizer_inst(
         .clk(clk),
         .rst(rst_onepulse),
-        .in_start(MOUSE_MIDDLE & block_editing),
+        .in_start(MOUSE_MIDDLE_onepulse & block_editing),
         .read_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
         .read_enable(canvas_read_enable),
