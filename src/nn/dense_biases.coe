@@ -1,5 +1,5 @@
 ; IP:    Distributed Memory Generator (ROM)
-; Name:  mem_conv_b
+; Name:  mem_dense_b
 ; Depth: 352
 ; Width: 16
 

@@ -1,7 +1,7 @@
 ; Only for IP configuration purpose
 
 ; IP:     Block Memory Generator (Simple Dual Port RAM)
-; Name:   mem_conv_b
+; Name:   mem_feat_buf_conv
 ; WidthA: 22
 ; DepthA: 4096
 ; WidthB: 22
