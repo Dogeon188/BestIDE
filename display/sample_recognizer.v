@@ -1,52 +1,60 @@
-module recognizer(
-    input clk, rst,
-    input in_start,
-    input read_data,
+
+module recognizer (
+    input wire clk,
+    input wire rst,
+    input wire in_start,
+    input wire read_data,
     output [9:0] read_addr,
     output wire read_enable, // enable read from canvas
     output wire result_valid,
-    output wire [7:0] result,
-    output reg pending // assert when reading canvas & processing
+    output reg [7:0] result,
+    output wire pending // assert when reading canvas & processing
 );
+    // core
+    wire core_done;
+    wire [7:0] core_result;
+    // recognizer_core core_inst (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .read_start(in_start),
+    //     .read_data(read_data),
+    //     .read_addr(read_addr),
+    //     .result(result),
+    //     .pending(pending)
+    // );
+    assign core_done = 1'b1;
+    assign core_result = 8'd64;
 
-    reg [31:0] canvas [31:0];
+    // FSM
+    reg [3:0] state;
+    parameter S_IDLE = 4'd0;
+    parameter S_READ = 4'd1;
+    parameter S_PROC = 4'd2;
+    parameter S_DONE = 4'd3;
+
     reg [9:0] counter;
-    reg data_ready;
+    wire [9:0] counter_next = (state == S_READ) ? counter + 10'd1 : 10'd0;
+
     always @(posedge clk) begin
-        if(rst) begin
+        if (rst) begin
+            state <= S_IDLE;
             counter <= 10'd0;
-            data_ready <= 1'b0;
-        end
-        else if(in_start) begin
-            canvas[read_addr[9:5]][read_addr[4:0]] <= read_data;
-            counter <= 10'd1;
-            data_ready <= 1'b0;
-        end
-        else if(counter) begin
-            canvas[read_addr[9:5]][read_addr[4:0]] <= read_data;
-            counter <= counter + 1;
-            if(counter == ~10'd0) begin
-                data_ready <= 1'b1;
-            end
-            else begin
-                data_ready <= 1'b0;
-            end
-        end
-        else begin
-            counter <= 10'd0;
-            data_ready <= 1'b0;
+            result <= 8'd0;
+        end else begin
+            case (state)
+                S_IDLE: state <= in_start ? S_READ : S_IDLE;
+                S_READ: state <= (counter == 10'd1023) ? S_PROC : S_READ;
+                S_PROC: state <= (core_done) ? S_DONE : S_PROC;
+                S_DONE: state <= S_IDLE;
+            endcase
+
+            counter <= counter_next;
+            result <= (state == S_DONE) ? 8'b0 : core_result;
         end
     end
 
-    always @(*) begin
-        if(rst) pending = 1'b0;
-        else if(in_start) pending = 1'b1;
-        else if(data_ready) pending = 1'b0;
-        else pending = pending;
-    end
-
-    assign result_valid = data_ready;
-    assign result = 8'd65;
-    assign read_enable = in_start || counter;
     assign read_addr = counter;
+    assign read_enable = (state == S_READ);
+    assign result_valid = (state == S_DONE);
+    assign pending = (state == S_READ) || (state == S_PROC);
 endmodule
