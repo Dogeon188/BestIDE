@@ -89,7 +89,8 @@ module recognizer_core (
         case (state)
             S_IDLE:   state_next <= read_start ? S_READ : S_IDLE;
             S_READ:   state_next <= (read_addr == 10'd1023) ? S_CONV1 : S_READ;
-            S_CONV1:  state_next <= (counter == T_CONV1) ? S_DONE : S_CONV1;
+            S_CONV1:  state_next <= (counter == T_CONV1) ? S_POOL1 : S_CONV1;
+            S_POOL1:  state_next <= (counter == T_POOL1) ? S_DONE : S_POOL1;
             // TODO: finish FSM
             default:   state_next <= S_IDLE;
         endcase
@@ -100,7 +101,9 @@ module recognizer_core (
         case (state)
             S_IDLE:   subcounter_max <= 4'd0;
             S_READ:   subcounter_max <= 4'd0;
-            S_CONV1:  subcounter_max <= 4'd10;
+            S_CONV1:  subcounter_max <= 4'd10; // 9 read + 1 write delay + 1 mult
+            S_POOL1:  subcounter_max <= 4'd2;
+            // TODO: finish FSM
             default:  subcounter_max <= 4'd0;
         endcase
     end
@@ -131,20 +134,25 @@ module recognizer_core (
     assign done = (state == S_DONE);
 
 // dsp
-    reg signed [`DATSIZE - 1 : 0] max_in0, max_in1, max_in2, max_in3;
+    reg signed [`DATSIZE - 1 : 0] max_in [3:0];
     wire signed [`DATSIZE - 1 : 0] max_out;
+    wire signed [`DATSIZE - 1 : 0] relu_out;
     max_4 max_inst (
-        .in0(max_in0),
-        .in1(max_in1),
-        .in2(max_in2),
-        .in3(max_in3),
+        .in0(max_in[0]),
+        .in1(max_in[1]),
+        .in2(max_in[2]),
+        .in3(max_in[3]),
         .out(max_out)
+    );
+    relu relu_inst (
+        .in(max_out),
+        .out(relu_out)
     );
 
     wire signed [(9 * `PARSIZE) - 1 : 0] read_weights_flat;
     wire signed [`DATSIZE - 1 : 0] read_weights [8:0];
-    genvar i;
     generate
+        genvar i;
         for (i = 0; i < 9; i = i + 1) begin : read_weights_gen
             assign read_weights[i] = read_weights_flat[(i + 1) * `PARSIZE - 1 -: `PARSIZE];
         end
@@ -282,7 +290,7 @@ module recognizer_core (
                 fb_conv_write_c <= 6'd0;
                 fb_conv_write_data <= 22'd0;
 
-                fb_conv_read_en <= (subcounter <= 4'd9);
+                fb_conv_read_en <= (subcounter < subcounter_max);
                 fb_conv_read_y <= {1'b0, counter[9:5]};
                 fb_conv_read_x <= {1'b0, counter[4:0]};
                 fb_conv_read_c <= 6'd0;
@@ -290,6 +298,17 @@ module recognizer_core (
             end
             // TODO: implement address calculation
             S_POOL1: begin // input (16, 16, 16)
+                fb_conv_write_en <= (subcounter == subcounter_max);
+                fb_conv_write_y <= {2'b0, counter[7:4]};
+                fb_conv_write_x <= {2'b0, counter[3:0]};
+                fb_conv_write_c <= {2'b0, counter[11:8]};
+                fb_conv_write_data <= relu_out;
+
+                fb_conv_read_en <= 1'b0;
+                fb_conv_read_y <= 6'd0;
+                fb_conv_read_x <= 6'd0;
+                fb_conv_read_c <= 6'd0;
+                fb_conv_read_s <= 4'd0;
             end
             S_CONV2: begin // output (16, 16, 16)
             end
@@ -318,7 +337,28 @@ module recognizer_core (
     reg signed [`DATSIZE - 1 : 0] fb_pool_write_data;
     reg [5 : 0] fb_pool_read_y, fb_pool_read_x, fb_pool_read_c;
     reg fb_pool_read_updown;
-    wire signed [(2 * `DATSIZE) - 1 : 0] fb_pool_read_data;
+    wire signed [`DATSIZE - 1 : 0] fb_pool_read_data [1:0];
+    reg signed [`DATSIZE - 1 : 0] fb_pool_read_data_prev [1:0];
+
+    always @(posedge clk) begin
+        fb_pool_read_data_prev[0] <= fb_pool_read_data[0];
+        fb_pool_read_data_prev[1] <= fb_pool_read_data[1];
+    end
+
+    always @(*) begin
+        if (fb_pool_read_en) begin
+            max_in[0] <= fb_pool_read_data_prev[0];
+            max_in[1] <= fb_pool_read_data_prev[1];
+            max_in[2] <= fb_pool_read_data[0];
+            max_in[3] <= fb_pool_read_data[1];
+        end else begin
+            max_in[0] <= 22'd0;
+            max_in[1] <= 22'd0;
+            max_in[2] <= 22'd0;
+            max_in[3] <= 22'd0;
+        end
+    end
+
     feat_buf_pool feat_buf_pool_inst (
         .clk(clk),
         .state(state),
@@ -332,7 +372,7 @@ module recognizer_core (
         .read_x(fb_pool_read_x),
         .read_c(fb_pool_read_c),
         .read_updown(fb_pool_read_updown),
-        .read_data(fb_pool_read_data)
+        .read_data({fb_pool_read_data[1], fb_pool_read_data[0]})
     );
 
     always @(*) begin
@@ -350,9 +390,20 @@ module recognizer_core (
                 fb_pool_read_c <= 6'd0;
                 fb_pool_read_updown <= 1'd0;
             end
-            // TODO: implement address calculation
-            S_POOL1: begin // output (32, 32, 16)
+            S_POOL1: begin // output (32, 32, 16) -> (16, 16, 16)
+                fb_pool_write_en <= 1'b0;
+                fb_pool_write_y <= 6'd0;
+                fb_pool_write_x <= 6'd0;
+                fb_pool_write_c <= 6'd0;
+                fb_pool_write_data <= 22'd0;
+
+                fb_pool_read_en <= 1'b1;
+                fb_pool_read_y <= {2'b0, counter[7:4]};
+                fb_pool_read_x <= {2'b0, counter[3:0]};
+                fb_pool_read_c <= {2'b0, counter[11:8]};
+                fb_pool_read_updown <= subcounter[0];
             end
+            // TODO: implement address calculation
             S_CONV2: begin // input (16, 16, 32)
             end
             S_POOL2: begin // output (16, 16, 32)

@@ -12,6 +12,13 @@ module max_4 (
     assign out = (max01 > max23) ? max01 : max23;
 endmodule
 
+module relu (
+    input wire signed [`DATSIZE - 1 : 0] in,
+    output wire signed [`DATSIZE - 1 : 0] out
+);
+    assign out = (in[`DATSIZE - 1]) ? 0 : in;
+endmodule
+
 module vec_mult_9 (
     input wire signed [`DATSIZE - 1 : 0] in0,
     input wire signed [`DATSIZE - 1 : 0] in1,
