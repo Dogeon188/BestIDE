@@ -1,3 +1,8 @@
+; IP:     Distributed Memory Generator (ROM)
+; Name:   font
+; Depth: 1536
+; Data Width: 16
+
 memory_initialization_radix=2;
 memory_initialization_vector=
 0000000000000000,
