@@ -4,8 +4,8 @@
 ## - rename the used ports (in each line, after get_ports) according to the top level signal names in the project
 
 ## Clock signal
-set_property -dict { PACKAGE_PIN W5   IOSTANDARD LVCMOS33 } [get_ports clk]
-create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]
+set_property -dict {PACKAGE_PIN W5 IOSTANDARD LVCMOS33} [get_ports clk]
+create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_ports clk]
 
 
 ## Switches
@@ -67,8 +67,8 @@ create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk
 # set_property -dict { PACKAGE_PIN U18   IOSTANDARD LVCMOS33 } [get_ports btnC]
 # set_property -dict { PACKAGE_PIN T18   IOSTANDARD LVCMOS33 } [get_ports btnU]
 # set_property -dict { PACKAGE_PIN W19   IOSTANDARD LVCMOS33 } [get_ports btnL]
-set_property -dict { PACKAGE_PIN T17   IOSTANDARD LVCMOS33 } [get_ports send_data]
-set_property -dict { PACKAGE_PIN U17   IOSTANDARD LVCMOS33 } [get_ports rst]
+set_property -dict {PACKAGE_PIN T17 IOSTANDARD LVCMOS33} [get_ports send_data]
+set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports rst]
 
 
 ##Pmod Header JA
@@ -113,30 +113,32 @@ set_property -dict { PACKAGE_PIN U17   IOSTANDARD LVCMOS33 } [get_ports rst]
 
 
 ##VGA Connector
-set_property -dict { PACKAGE_PIN G19   IOSTANDARD LVCMOS33 } [get_ports {vgaRed[0]}]
-set_property -dict { PACKAGE_PIN H19   IOSTANDARD LVCMOS33 } [get_ports {vgaRed[1]}]
-set_property -dict { PACKAGE_PIN J19   IOSTANDARD LVCMOS33 } [get_ports {vgaRed[2]}]
-set_property -dict { PACKAGE_PIN N19   IOSTANDARD LVCMOS33 } [get_ports {vgaRed[3]}]
-set_property -dict { PACKAGE_PIN N18   IOSTANDARD LVCMOS33 } [get_ports {vgaBlue[0]}]
-set_property -dict { PACKAGE_PIN L18   IOSTANDARD LVCMOS33 } [get_ports {vgaBlue[1]}]
-set_property -dict { PACKAGE_PIN K18   IOSTANDARD LVCMOS33 } [get_ports {vgaBlue[2]}]
-set_property -dict { PACKAGE_PIN J18   IOSTANDARD LVCMOS33 } [get_ports {vgaBlue[3]}]
-set_property -dict { PACKAGE_PIN J17   IOSTANDARD LVCMOS33 } [get_ports {vgaGreen[0]}]
-set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 } [get_ports {vgaGreen[1]}]
-set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33 } [get_ports {vgaGreen[2]}]
-set_property -dict { PACKAGE_PIN D17   IOSTANDARD LVCMOS33 } [get_ports {vgaGreen[3]}]
-set_property -dict { PACKAGE_PIN P19   IOSTANDARD LVCMOS33 } [get_ports hsync]
-set_property -dict { PACKAGE_PIN R19   IOSTANDARD LVCMOS33 } [get_ports vsync]
+set_property -dict {PACKAGE_PIN G19 IOSTANDARD LVCMOS33} [get_ports {vgaRed[0]}]
+set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports {vgaRed[1]}]
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports {vgaRed[2]}]
+set_property -dict {PACKAGE_PIN N19 IOSTANDARD LVCMOS33} [get_ports {vgaRed[3]}]
+set_property -dict {PACKAGE_PIN N18 IOSTANDARD LVCMOS33} [get_ports {vgaBlue[0]}]
+set_property -dict {PACKAGE_PIN L18 IOSTANDARD LVCMOS33} [get_ports {vgaBlue[1]}]
+set_property -dict {PACKAGE_PIN K18 IOSTANDARD LVCMOS33} [get_ports {vgaBlue[2]}]
+set_property -dict {PACKAGE_PIN J18 IOSTANDARD LVCMOS33} [get_ports {vgaBlue[3]}]
+set_property -dict {PACKAGE_PIN J17 IOSTANDARD LVCMOS33} [get_ports {vgaGreen[0]}]
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports {vgaGreen[1]}]
+set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {vgaGreen[2]}]
+set_property -dict {PACKAGE_PIN D17 IOSTANDARD LVCMOS33} [get_ports {vgaGreen[3]}]
+set_property -dict {PACKAGE_PIN P19 IOSTANDARD LVCMOS33} [get_ports hsync]
+set_property -dict {PACKAGE_PIN R19 IOSTANDARD LVCMOS33} [get_ports vsync]
 
 
 ##USB-RS232 Interface
-set_property -dict { PACKAGE_PIN B18   IOSTANDARD LVCMOS33 } [get_ports RsRx]
-set_property -dict { PACKAGE_PIN A18   IOSTANDARD LVCMOS33 } [get_ports RsTx]
 
 
 ##USB HID (PS/2)
-set_property -dict { PACKAGE_PIN C17   IOSTANDARD LVCMOS33   PULLUP true } [get_ports PS2_CLK]
-set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33   PULLUP true } [get_ports PS2_DATA]
+set_property PACKAGE_PIN C17 [get_ports PS2_CLK]
+set_property IOSTANDARD LVCMOS33 [get_ports PS2_CLK]
+set_property PULLTYPE PULLUP [get_ports PS2_CLK]
+set_property PACKAGE_PIN B17 [get_ports PS2_DATA]
+set_property IOSTANDARD LVCMOS33 [get_ports PS2_DATA]
+set_property PULLTYPE PULLUP [get_ports PS2_DATA]
 
 
 ##Quad SPI Flash
@@ -158,3 +160,4 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
+

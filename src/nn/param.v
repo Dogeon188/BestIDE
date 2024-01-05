@@ -28,11 +28,11 @@ module conv_weights (
                 end
                 4'b0100: begin // CONV2, (16, 16) 16 -> 32
                     _en <= 1'b1;
-                    addr <= SHIFT_CONV2 + {read_o[3 : 0], read_c[4 : 0]};
+                    addr <= SHIFT_CONV2 + {read_o[4 : 0], read_c[3 : 0]};
                 end
                 4'b0110: begin // CONV3, (8, 8) 32 -> 64
                     _en <= 1'b1;
-                    addr <= SHIFT_CONV3 + {read_o[4 : 0], read_c[5 : 0]};
+                    addr <= SHIFT_CONV3 + {read_o[5 : 0], read_c[4 : 0]};
                 end
                 default: begin
                     _en <= 1'b0;
