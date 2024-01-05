@@ -7,8 +7,6 @@ module top(
     output [3:0] vgaBlue,
     output hsync,
     output vsync,
-    output [3:0]AN,
-    output [6:0]SEG,
     inout wire PS2_CLK,
     inout wire PS2_DATA
 );
