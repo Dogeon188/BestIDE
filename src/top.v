@@ -10,6 +10,8 @@ module top(
     inout wire PS2_CLK,
     inout wire PS2_DATA
 );
+
+    wire clk_25MHz;
     wire valid;
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
@@ -19,7 +21,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse, extended_MOUSE_NEW_EVENT;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -38,7 +40,7 @@ module top(
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse;
+    wire rst_debounced, rst_onepulse, rst_extending_signal;
     wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
@@ -49,7 +51,7 @@ module top(
     wire canvas_write_enable = mouse_write_enable && ~canvas_read_enable;
     wire [7:0] doc_write_in_data;
     wire recognizer_pending;
-
+    
     debounce debounce_inst(
         .clk(clk),
         .in(rst),
@@ -66,6 +68,17 @@ module top(
         .clk(clk),
         .in(MOUSE_MIDDLE),
         .out(MOUSE_MIDDLE_onepulse)
+    );
+
+    extending_signal extending_signal_inst(
+        .clk(~clk),
+        .in(rst_onepulse),
+        .out(rst_extending_signal)
+    );
+
+    clock_divisor clk_wiz_0_inst(
+        .clk(clk),
+        .clk_25MHz(clk_25MHz)
     );
 
     pixel_gen pixel_gen_inst(
@@ -155,10 +168,10 @@ module top(
         .spo(recognizer_read_in_data),
         .dpo(canvas_vga_pixel)
     );
-
+    
     vga_controller vga_inst(
-      .pclk(clk),
-      .reset(rst_onepulse),
+      .pclk(clk_25MHz),
+      .reset(rst_extending_signal),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
@@ -203,6 +216,25 @@ module top(
       
 endmodule
 
+
+module extending_signal(clk, in, out);
+    input clk;
+    input in;
+    output out;
+
+    reg [2:0] counter;
+
+    always @(posedge clk) begin
+        if(in) begin
+            counter <= 3'b111;
+        end 
+        else begin
+            counter <= counter[2] ? counter - 1 : counter;
+        end
+    end
+    assign out = counter[2];
+endmodule
+
 module debounce(clk, in, out);
     input clk, in;
     output out;
@@ -228,4 +260,19 @@ module onepulse(clk, in, out);
 
     assign out = ~A & in;
 
+endmodule
+
+module clock_divisor(
+    input wire clk,
+    output wire clk_25MHz
+);
+
+    reg [1:0] num;
+    wire [1:0] next_num = num + 1'b1;
+
+    always @(posedge clk) begin
+        num <= next_num;
+    end
+
+    assign clk_25MHz = num[1];
 endmodule

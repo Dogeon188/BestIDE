@@ -19,7 +19,7 @@ module mouse(
     wire [3:0] MOUSE_Z_POS;
     
     MouseCtl #(
-      .SYSCLK_FREQUENCY_HZ(108000000),
+      .SYSCLK_FREQUENCY_HZ(100000000),
       .CHECK_PERIOD_MS(500),
       .TIMEOUT_PERIOD_MS(100)
     )MC1(
