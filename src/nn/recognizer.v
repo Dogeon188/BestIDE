@@ -68,6 +68,8 @@ module recognizer_core (
     output wire done,
     output reg [7:0] result
 );
+    reg signed [`DATSIZE - 1 : 0] max_val;
+    reg [7:0] max_idx;
 // FSM
     reg [3:0] state, state_next;
     reg [8:0] subcounter;
@@ -95,8 +97,7 @@ module recognizer_core (
             S_POOL2:  state_next <= ((counter == T_POOL2)  && (subcounter == subcounter_max)) ? S_CONV3  : S_POOL2;
             S_CONV3:  state_next <= ((counter == T_CONV3)  && (subcounter == subcounter_max)) ? S_POOL3  : S_CONV3;
             S_POOL3:  state_next <= ((counter == T_POOL3)  && (subcounter == subcounter_max)) ? S_DENSE2 : S_POOL3;
-            S_DENSE2: state_next <= ((counter == T_DENSE2) && (subcounter == subcounter_max)) ? S_DONE : S_DENSE2;
-            // TODO: finish FSM
+            S_DENSE2: state_next <= ((counter == T_DENSE2) && (subcounter == subcounter_max)) ? S_DENSE1 : S_DENSE2;
             S_DENSE1: state_next <= ((counter == T_DENSE1) && (subcounter == subcounter_max)) ? S_DONE : S_DENSE1;
             default:   state_next <= S_IDLE;
         endcase
@@ -114,7 +115,6 @@ module recognizer_core (
             S_CONV3:  subcounter_max <= 9'd11;
             S_POOL3:  subcounter_max <= 9'd17;
             S_DENSE2: subcounter_max <= 9'd258; // 255 + 3
-            // TODO: finish FSM
             S_DENSE1: subcounter_max <= 9'd98;  // 95 + 3
             default:  subcounter_max <= 9'd0;
         endcase
@@ -137,8 +137,7 @@ module recognizer_core (
             end
 
             if (state_next == S_DONE) begin
-                // TODO: show actual result
-                result <= acc_out[0][7:0];
+                result <= max_idx;
             end
         end
     end
@@ -203,12 +202,12 @@ module recognizer_core (
         if (rst) begin
             acc[0] <= 22'd0;
         end else begin
-            if ((subcounter == subcounter_max) && (
-                (state == S_CONV1) ||
-                (state == S_CONV2 && counter[3:0] == 4'd15) ||
-                (state == S_CONV3 && counter[4:0] == 5'd31) ||
-                (state == S_DENSE2)
-            )) begin
+            if (((subcounter == subcounter_max) && ( // TODO: why not also use subcounter == 1?
+                    (state == S_CONV1) ||
+                    (state == S_CONV2 && counter[3:0] == 4'd15) ||
+                    (state == S_CONV3 && counter[4:0] == 5'd31))
+                ) ||
+                (subcounter == 9'd1 && (state == S_DENSE2 || state == S_DENSE1))) begin
                 acc[0] <= 22'd0;
             end else begin
                 acc[0] <= acc[0] + (acc_in[0] * acc_weight[0]);
@@ -336,6 +335,14 @@ module recognizer_core (
     reg [3 : 0] fb_conv_read_s;
     wire signed [`DATSIZE - 1 : 0] fb_conv_read_data;
 
+    reg fb_pool_write_en, fb_pool_read_en;
+    reg [5 : 0] fb_pool_write_y, fb_pool_write_x;
+    reg [6 : 0] fb_pool_write_c;
+    reg signed [`DATSIZE - 1 : 0] fb_pool_write_data;
+    reg [5 : 0] fb_pool_read_y, fb_pool_read_x, fb_pool_read_c;
+    reg fb_pool_read_updown;
+    wire signed [`DATSIZE - 1 : 0] fb_pool_read_data [1:0];
+
     always @(posedge clk) begin
         if ((state == S_CONV1 || state == S_CONV2 || state == S_CONV3) &&
             (fb_conv_read_en && (subcounter[3:0] < 4'd10 && subcounter[3:0] != 4'd0))) begin
@@ -343,6 +350,9 @@ module recognizer_core (
             acc_weight[0] <= read_conv_weights[fb_conv_read_s - 4'd1];
         end else if (state == S_DENSE2) begin
             acc_in[0] <= fb_conv_read_data;
+            acc_weight[0] <= read_dense_weight;
+        end else if (state == S_DENSE1) begin
+            acc_in[0] <= subcounter[0] ? fb_pool_read_data[0] : fb_pool_read_data[1];
             acc_weight[0] <= read_dense_weight;
         end else begin
             acc_in[0] <= 22'd0;
@@ -432,7 +442,7 @@ module recognizer_core (
                 fb_conv_read_s <= subcounter[3:0];
             end
             S_DENSE2: begin // output (256)
-                fb_conv_read_en <= (subcounter < subcounter_max);
+                fb_conv_read_en <= 1'b1;
                 fb_conv_read_y <= 6'd0;
                 fb_conv_read_x <= 6'd0;
                 fb_conv_read_c <= subcounter[7:0];
@@ -447,14 +457,6 @@ module recognizer_core (
             end
         endcase
     end
-
-    reg fb_pool_write_en, fb_pool_read_en;
-    reg [5 : 0] fb_pool_write_y, fb_pool_write_x;
-    reg [6 : 0] fb_pool_write_c;
-    reg signed [`DATSIZE - 1 : 0] fb_pool_write_data;
-    reg [5 : 0] fb_pool_read_y, fb_pool_read_x, fb_pool_read_c;
-    reg fb_pool_read_updown;
-    wire signed [`DATSIZE - 1 : 0] fb_pool_read_data [1:0];
 
     always @(posedge clk) begin
         if (rst) begin
@@ -492,6 +494,13 @@ module recognizer_core (
     );
 
     // feat buf pool write
+    wire signed [`DATSIZE - 1 : 0] dense_result = acc_out[0] + pm_dense_bias;
+    wire signed [`DATSIZE - 1 : 0] dense_relu;
+    relu relu_inst2 (
+        .in(dense_result),
+        .out(dense_relu)
+    );
+
     always @(*) begin
         case (state)
             S_CONV1: begin // input (32, 32, 16)
@@ -520,7 +529,7 @@ module recognizer_core (
                 fb_pool_write_y <= 6'd0;
                 fb_pool_write_x <= 6'd0;
                 fb_pool_write_c <= counter[6:0];
-                fb_pool_write_data <= acc_out[0] + pm_dense_bias;
+                fb_pool_write_data <= dense_relu;
             end
             default: begin
                 fb_pool_write_en <= 1'b0;
@@ -556,6 +565,13 @@ module recognizer_core (
                 fb_pool_read_c <= counter[7:2];
                 fb_pool_read_updown <= subcounter[0];
             end
+            S_DENSE1: begin // output (96)
+                fb_pool_read_en <= 1'b1;
+                fb_pool_read_y <= 6'd0;
+                fb_pool_read_x <= 6'd0;
+                fb_pool_read_c <= subcounter[6:1];
+                fb_pool_read_updown <= 1'b0;
+            end
             default: begin
                 fb_pool_read_en <= 1'b0;
                 fb_pool_read_y <= 6'd0;
@@ -564,5 +580,21 @@ module recognizer_core (
                 fb_pool_read_updown <= 1'd0;
             end
         endcase
+    end
+
+// result calculation
+    always @(posedge clk) begin
+        if (rst || state != S_DENSE1) begin
+            max_val <= 22'd0;
+            max_idx <= 8'd0;
+        end else begin
+            if (subcounter == subcounter_max) begin
+                max_val <= (counter[6:0] == 7'd0 || dense_result > max_val) ? dense_result : max_val;
+                max_idx <= (counter[6:0] == 7'd0 || dense_result > max_val) ? {1'b0, counter[6:0]} : max_idx;
+            end else begin
+                max_val <= max_val;
+                max_idx <= max_idx;
+            end
+        end
     end
 endmodule

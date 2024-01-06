@@ -145,8 +145,8 @@ module dense_biases (
     output wire signed [`PARSIZE - 1 : 0] data
 );
     // write address conversion
-    parameter SHIFT_DENSE2 = 7'd0;
-    parameter SHIFT_DENSE1 = 7'd96;
+    parameter SHIFT_DENSE2 = 8'd0;
+    parameter SHIFT_DENSE1 = 8'd96;
     reg [7 : 0] addr;
 
     always @(*) begin
@@ -158,12 +158,12 @@ module dense_biases (
                 addr <= SHIFT_DENSE1 + read_o[6 : 0];
             end
             default: begin
-                addr <= 7'b0;
+                addr <= 8'b0;
             end
         endcase
     end
 
-    mem_conv_b mem (
+    mem_dense_b mem (
         .a(addr),
         .spo(data)
     );

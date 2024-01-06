@@ -143,7 +143,8 @@ module feat_buf_pool (
     input wire [6 : 0] write_c,
     input wire [`DATSIZE - 1 : 0] write_data,
     input wire read_en, // when state is POOL1(01), POOL2(10), POOL3(00)
-    input wire [5 : 0] read_y, read_x, read_c, // pooled x & y
+    input wire [5 : 0] read_y, read_x, // pooled x & y
+    input wire [6 : 0] read_c,
     input wire read_updown, // 0: up, 1: down
     output wire signed [(2 * `DATSIZE) - 1 : 0] read_data
 );
@@ -200,6 +201,10 @@ module feat_buf_pool (
                 4'b0111: begin // POOL3, (8, 8, 64)
                     _read_en <= 1'b1;
                     read_addr <= {2'b0, read_c[5:0], read_y[1:0], read_updown, read_x[1:0]};
+                end
+                4'b1001: begin // DENSE1, (96)
+                    _read_en <= 1'b1;
+                    read_addr <= {6'b0, read_c[5:0]};
                 end
                 default: begin
                     _read_en <= 1'b0;
