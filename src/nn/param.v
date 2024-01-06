@@ -88,3 +88,81 @@ module conv_biases (
         .spo(data)
     );
 endmodule
+
+module dense_weights (
+    input wire clk,
+    input wire en,
+    input wire [3 : 0] state,
+    input wire [5 : 0] read_i, read_o,
+    output wire signed [8 * `PARSIZE - 1 : 0] data
+);
+    // write address conversion
+    parameter SHIFT_DENSE2 = 13'd0;
+    parameter SHIFT_DENSE1 = 13'd3072;
+
+    reg _en;
+    reg [12 : 0] addr;
+    always @(*) begin
+        if (!en) begin
+            _en <= 1'b0;
+            addr <= 13'b0;
+        end else begin
+            case (state)
+                4'b1000: begin // DENSE2, 256 -> 96
+                    _en <= 1'b1;
+                    addr <= 13'b0; // TODO
+                end
+                4'b1001: begin // DENSE1, 96 -> 96
+                    _en <= 1'b1;
+                    addr <= 13'b0; // TODO
+                end
+                default: begin
+                    _en <= 1'b0;
+                    addr <= 13'b0;
+                end
+            endcase
+        end
+    end
+
+    wire [8 * `PARSIZE - 1 : 0] doutb; // not used
+    mem_dense_w mem (
+        .clka(clk),
+        .ena(_en),
+        .addra(addr),
+        .douta(data),
+        .clkb(clk),
+        .enb(1'b0),
+        .addrb(13'b0),
+        .doutb(doutb)
+    );
+endmodule
+
+module dense_biases (
+    input wire [3 : 0] state,
+    input wire [6 : 0] read_o,
+    output wire signed [`PARSIZE - 1 : 0] data
+);
+    // write address conversion
+    parameter SHIFT_DENSE2 = 7'd0;
+    parameter SHIFT_DENSE1 = 7'd96;
+    reg [7 : 0] addr;
+
+    always @(*) begin
+        case (state)
+            4'b1000: begin // DENSE2, 256 -> 96
+                addr <= SHIFT_DENSE2 + read_o[6 : 0];
+            end
+            4'b1001: begin // DENSE1, 96 -> 96
+                addr <= SHIFT_DENSE1 + read_o[6 : 0];
+            end
+            default: begin
+                addr <= 7'b0;
+            end
+        endcase
+    end
+
+    mem_conv_b mem (
+        .a(addr),
+        .spo(data)
+    );
+endmodule

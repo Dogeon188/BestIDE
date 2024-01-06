@@ -89,12 +89,13 @@ module recognizer_core (
         case (state)
             S_IDLE:   state_next <= read_start ? S_READ : S_IDLE;
             S_READ:   state_next <= (read_addr == 10'd1023) ? S_CONV1 : S_READ;
-            S_CONV1:  state_next <= ((counter == T_CONV1) && (subcounter == subcounter_max)) ? S_POOL1 : S_CONV1;
-            S_POOL1:  state_next <= ((counter == T_POOL1) && (subcounter == subcounter_max)) ? S_CONV2 : S_POOL1;
-            S_CONV2:  state_next <= ((counter == T_CONV2) && (subcounter == subcounter_max)) ? S_POOL2 : S_CONV2;
-            S_POOL2:  state_next <= ((counter == T_POOL2) && (subcounter == subcounter_max)) ? S_CONV3 : S_POOL2;
-            S_CONV3:  state_next <= ((counter == T_CONV3) && (subcounter == subcounter_max)) ? S_POOL3 : S_CONV3;
-            S_POOL3:  state_next <= ((counter == T_POOL3) && (subcounter == subcounter_max)) ? S_DONE : S_POOL3;
+            S_CONV1:  state_next <= ((counter == T_CONV1)  && (subcounter == subcounter_max)) ? S_POOL1  : S_CONV1;
+            S_POOL1:  state_next <= ((counter == T_POOL1)  && (subcounter == subcounter_max)) ? S_CONV2  : S_POOL1;
+            S_CONV2:  state_next <= ((counter == T_CONV2)  && (subcounter == subcounter_max)) ? S_POOL2  : S_CONV2;
+            S_POOL2:  state_next <= ((counter == T_POOL2)  && (subcounter == subcounter_max)) ? S_CONV3  : S_POOL2;
+            S_CONV3:  state_next <= ((counter == T_CONV3)  && (subcounter == subcounter_max)) ? S_POOL3  : S_CONV3;
+            S_POOL3:  state_next <= ((counter == T_POOL3)  && (subcounter == subcounter_max)) ? S_DONE : S_POOL3;
+            S_DENSE2: state_next <= ((counter == T_DENSE2) && (subcounter == subcounter_max)) ? S_DONE : S_DENSE2;
             // TODO: finish FSM
             default:   state_next <= S_IDLE;
         endcase
@@ -105,12 +106,12 @@ module recognizer_core (
         case (state)
             S_IDLE:   subcounter_max <= 5'd0;
             S_READ:   subcounter_max <= 5'd0;
-            S_CONV1:  subcounter_max <= 5'd10; // 9 read + 1 write delay + 1 mult
-            S_POOL1:  subcounter_max <= 5'd3;
-            S_CONV2:  subcounter_max <= 5'd10;
-            S_POOL2:  subcounter_max <= 5'd3;
-            S_CONV3:  subcounter_max <= 5'd10;
-            S_POOL3:  subcounter_max <= 5'd16;
+            S_CONV1:  subcounter_max <= 5'd11; // 2 read delay + 9 read & mult + 1 write delay
+            S_POOL1:  subcounter_max <= 5'd4;
+            S_CONV2:  subcounter_max <= 5'd11;
+            S_POOL2:  subcounter_max <= 5'd4;
+            S_CONV3:  subcounter_max <= 5'd11;
+            S_POOL3:  subcounter_max <= 5'd17;
             // TODO: finish FSM
             default:  subcounter_max <= 5'd0;
         endcase
@@ -143,9 +144,10 @@ module recognizer_core (
 
 // dsp
     reg signed [`DATSIZE - 1 : 0] max_in [3:0];
-    reg signed [`DATSIZE - 1 : 0] max_stack [3:0];
-    wire signed [`DATSIZE - 1 : 0] max_out, max_out2;
+    wire signed [`DATSIZE - 1 : 0] max_out;
     wire signed [`DATSIZE - 1 : 0] relu_out;
+    reg signed [`DATSIZE - 1 : 0] relu_reg;
+    reg signed [`DATSIZE - 1 : 0] max_out2;
     max_4 max_inst (
         .in0(max_in[0]),
         .in1(max_in[1]),
@@ -153,34 +155,24 @@ module recognizer_core (
         .in3(max_in[3]),
         .out(max_out)
     );
-    max_4 max_inst2 (
-        .in0(max_stack[0]),
-        .in1(max_stack[1]),
-        .in2(max_stack[2]),
-        .in3(max_stack[3]),
-        .out(max_out2)
-    );
     relu relu_inst (
         .in(max_out),
         .out(relu_out)
     );
     always @(posedge clk) begin
+        relu_reg <= relu_out;
+
         if (rst) begin
-            max_stack[0] <= 22'd0;
-            max_stack[1] <= 22'd0;
-            max_stack[2] <= 22'd0;
-            max_stack[3] <= 22'd0;
+            max_out2 <= 22'd0;
         end else begin
-            if (subcounter[1:0] == 2'd3) begin
-                max_stack[0] <= relu_out;
-                max_stack[1] <= max_stack[0];
-                max_stack[2] <= max_stack[1];
-                max_stack[3] <= max_stack[2];
+            if (subcounter == subcounter_max) begin
+                max_out2 <= 22'd0;
             end else begin
-                max_stack[0] <= max_stack[0];
-                max_stack[1] <= max_stack[1];
-                max_stack[2] <= max_stack[2];
-                max_stack[3] <= max_stack[3];
+                if (subcounter[1:0] == 2'd0 && subcounter[4:0] != 5'd0) begin
+                    max_out2 <= (relu_reg > max_out2) ? relu_reg : max_out2;
+                end else begin
+                    max_out2 <= max_out2;
+                end
             end
         end
     end
@@ -285,7 +277,7 @@ module recognizer_core (
     reg [3 : 0] fb_conv_read_s;
     wire signed [`DATSIZE - 1 : 0] fb_conv_read_data;
 
-    always @(*) begin
+    always @(posedge clk) begin
         if (fb_conv_read_en && (subcounter[3:0] < 4'd10 && subcounter[3:0] != 4'd0)) begin
             acc_in[0] <= fb_conv_read_data;
             acc_weight[0] <= read_weights[fb_conv_read_s - 4'd1];
@@ -344,7 +336,7 @@ module recognizer_core (
                 fb_conv_write_y <= {1'b0, counter[7:4]};
                 fb_conv_write_x <= {1'b0, counter[3:0]};
                 fb_conv_write_c <= {2'b0, counter[11:8]};
-                fb_conv_write_data <= relu_out;
+                fb_conv_write_data <= relu_reg;
 
                 fb_conv_read_en <= 1'b0;
                 fb_conv_read_y <= 6'd0;
@@ -370,7 +362,7 @@ module recognizer_core (
                 fb_conv_write_y <= {2'b0, counter[5:3]};
                 fb_conv_write_x <= {2'b0, counter[2:0]};
                 fb_conv_write_c <= {1'b0, counter[10:6]};
-                fb_conv_write_data <= relu_out;
+                fb_conv_write_data <= relu_reg;
 
                 fb_conv_read_en <= 1'b0;
                 fb_conv_read_y <= 6'd0;
