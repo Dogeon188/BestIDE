@@ -49,7 +49,7 @@ module recognizer (
             endcase
 
             counter <= (state == S_READ) ? counter + 10'd1 : 10'd0;
-            if (state == S_DONE) result <= core_result;
+            if (core_done) result <= core_result;
         end
     end
 
@@ -114,8 +114,8 @@ module recognizer_core (
             S_POOL2:  subcounter_max <= 9'd4;
             S_CONV3:  subcounter_max <= 9'd11;
             S_POOL3:  subcounter_max <= 9'd17;
-            S_DENSE2: subcounter_max <= 9'd258; // 255 + 3
-            S_DENSE1: subcounter_max <= 9'd98;  // 95 + 3
+            S_DENSE2: subcounter_max <= 9'd259; // 255 + 3 + 1
+            S_DENSE1: subcounter_max <= 9'd99;  // 95 + 3 + 1
             default:  subcounter_max <= 9'd0;
         endcase
     end
@@ -495,11 +495,16 @@ module recognizer_core (
 
     // feat buf pool write
     wire signed [`DATSIZE - 1 : 0] dense_result = acc_out[0] + pm_dense_bias;
+    reg signed [`DATSIZE - 1 : 0] dense_result_reg;
     wire signed [`DATSIZE - 1 : 0] dense_relu;
     relu relu_inst2 (
-        .in(dense_result),
+        .in(dense_result_reg),
         .out(dense_relu)
     );
+
+    always @(posedge clk) begin
+        dense_result_reg <= dense_result;
+    end
 
     always @(*) begin
         case (state)
@@ -584,13 +589,13 @@ module recognizer_core (
 
 // result calculation
     always @(posedge clk) begin
-        if (rst || state != S_DENSE1) begin
+        if (rst) begin
             max_val <= 22'd0;
             max_idx <= 8'd0;
         end else begin
-            if (subcounter == subcounter_max) begin
-                max_val <= (counter[6:0] == 7'd0 || dense_result > max_val) ? dense_result : max_val;
-                max_idx <= (counter[6:0] == 7'd0 || dense_result > max_val) ? {1'b0, counter[6:0]} : max_idx;
+            if (state == S_DENSE1 && subcounter == subcounter_max) begin
+                max_val <= (counter[6:0] == 7'd0 || dense_result_reg > max_val) ? dense_result_reg : max_val;
+                max_idx <= (counter[6:0] == 7'd0 || dense_result_reg > max_val) ? {1'b0, counter[6:0]} : max_idx;
             end else begin
                 max_val <= max_val;
                 max_idx <= max_idx;
