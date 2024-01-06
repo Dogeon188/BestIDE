@@ -13,7 +13,7 @@ module feat_buf_conv (
     input wire clk,
     input wire [3 : 0] state,
     input wire write_en, // when state is READ(00), POOL1(01), POOL2(10)
-    input wire [4 : 0] write_y, write_x, write_c,
+    input wire [5 : 0] write_y, write_x, write_c,
     input wire [`DATSIZE - 1 : 0] write_data,
     input wire read_en, // when state is CONV1(01), CONV2(10), CONV3(11)
     input wire [5 : 0] read_y, read_x, read_c,
@@ -41,6 +41,10 @@ module feat_buf_conv (
                     write_addr <= {1'b0, write_c[4:0], write_y[2:0], write_x[2:0]};
                     _write_en <= 1'b1;
                 end
+                4'b0111: begin // POOL3, (2, 2, 64)
+                    write_addr <= {4'b0, write_y[0], write_x[0], write_c[5:0]};
+                    _write_en <= 1'b1;
+                end 
                 default: begin
                     write_addr <= 12'b0;
                     _write_en <= 1'b0;
@@ -183,7 +187,7 @@ module feat_buf_pool (
                     _read_en <= 1'b1;
                     read_addr <= {1'b0, read_c[4:0], read_y[2:0], read_updown, read_x[2:0]};
                 end
-                4'b0110: begin // POOL3, (8, 8, 64)
+                4'b0111: begin // POOL3, (8, 8, 64)
                     _read_en <= 1'b1;
                     read_addr <= {2'b0, read_c[5:0], read_y[1:0], read_updown, read_x[1:0]};
                 end
