@@ -93,7 +93,8 @@ module dense_weights (
     input wire clk,
     input wire en,
     input wire [3 : 0] state,
-    input wire [5 : 0] read_i, read_o,
+    input wire [6 : 0] read_o,
+    input wire [7 : 0] read_i,
     output wire signed [8 * `PARSIZE - 1 : 0] data
 );
     // write address conversion
@@ -108,13 +109,14 @@ module dense_weights (
             addr <= 13'b0;
         end else begin
             case (state)
+                // TODO: check if this is correct
                 4'b1000: begin // DENSE2, 256 -> 96
                     _en <= 1'b1;
-                    addr <= 13'b0; // TODO
+                    addr <= SHIFT_DENSE2 + {read_o[6 : 0], read_i[7 : 3]};
                 end
                 4'b1001: begin // DENSE1, 96 -> 96
                     _en <= 1'b1;
-                    addr <= 13'b0; // TODO
+                    addr <= SHIFT_DENSE1 + read_o[6 : 0] * 12 + read_i[6 : 3];
                 end
                 default: begin
                     _en <= 1'b0;
