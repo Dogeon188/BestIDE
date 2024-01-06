@@ -1,6 +1,6 @@
 ; IP:    Distributed Memory Generator (ROM)
 ; Name:  mem_dense_b
-; Depth: 352
+; Depth: 192
 ; Width: 16
 
 memory_initialization_radix = 16;
