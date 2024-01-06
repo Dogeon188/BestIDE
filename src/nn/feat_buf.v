@@ -16,7 +16,8 @@ module feat_buf_conv (
     input wire [5 : 0] write_y, write_x, write_c,
     input wire [`DATSIZE - 1 : 0] write_data,
     input wire read_en, // when state is CONV1(01), CONV2(10), CONV3(11)
-    input wire [5 : 0] read_y, read_x, read_c,
+    input wire [5 : 0] read_y, read_x,
+    input wire [7 : 0] read_c,
     input wire [3 : 0] read_s, // shift, [[0, 1, 2], [3, *4*, 5], [6, 7, 8]]
     output wire signed [`DATSIZE - 1 : 0] read_data
 );
@@ -96,6 +97,10 @@ module feat_buf_conv (
                     _read_en <= _read_y >= 6'sd0 && _read_y < 6'sd8 && _read_x >= 6'sd0 && _read_x < 6'sd8;
                     read_addr <= {1'b0, read_c[4:0], _read_y[2:0], _read_x[2:0]};
                 end
+                4'b1000: begin // DENSE2, (256)
+                    _read_en <= 1'b1;
+                    read_addr <= {5'b0, read_c[7:0]};
+                end
                 default: begin
                     _read_en <= 1'b0;
                     read_addr <= 12'b0;
@@ -134,7 +139,8 @@ module feat_buf_pool (
     input wire clk,
     input wire [3 : 0] state,
     input wire write_en, // when state is CONV1(01), CONV2(10), CONV3(11)
-    input wire [5 : 0] write_y, write_x, write_c,
+    input wire [5 : 0] write_y, write_x,
+    input wire [6 : 0] write_c,
     input wire [`DATSIZE - 1 : 0] write_data,
     input wire read_en, // when state is POOL1(01), POOL2(10), POOL3(00)
     input wire [5 : 0] read_y, read_x, read_c, // pooled x & y
@@ -162,8 +168,12 @@ module feat_buf_pool (
                     write_addr <= {2'b0, write_c[5:0], write_y[2:0], write_x[2:0]};
                     _write_en <= 1'b1;
                 end
+                4'b1000: begin // DENSE2, (96)
+                    write_addr <= {7'b0, write_c[6:0]};
+                    _write_en <= 1'b1;
+                end
                 default: begin
-                    write_addr <= 12'b0;
+                    write_addr <= 13'b0;
                     _write_en <= 1'b0;
                 end
             endcase
