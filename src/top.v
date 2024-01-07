@@ -24,7 +24,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_RIGHT_onepulse;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_RIGHT_debounce, MOUSE_RIGHT_onepulse;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -67,6 +67,12 @@ module top(
         .in(send),
         .out(send_debounced)
     );
+
+    debounce debounce_MOUSE_RIGHT(
+        .clk(clk),
+        .in(MOUSE_RIGHT),
+        .out(MOUSE_RIGHT_debounce)
+    );
     
     onepulse onepulse_send(
         .clk(clk),
@@ -82,7 +88,7 @@ module top(
 
     onepulse onepulse_MOUSE_RIGHT(
         .clk(clk),
-        .in(MOUSE_RIGHT),
+        .in(MOUSE_RIGHT_debounce),
         .out(MOUSE_RIGHT_onepulse)
     );
 
@@ -254,64 +260,4 @@ module top(
         end
     end
       
-endmodule
-
-module debounce(clk, in, out);
-    input clk, in;
-    output out;
-
-    reg [3:0] DFF;
-
-    always @(posedge clk) begin
-        DFF <= {DFF[2:0], in};
-    end
-
-    assign out = DFF[3] & DFF[2] & DFF[1] & DFF[0];
-endmodule
-
-module onepulse(clk, in, out);
-    input clk, in;
-    output out;
-
-    reg A;
-
-    always @(posedge clk) begin
-        A <= in;
-    end
-
-    assign out = ~A & in;
-
-endmodule
-
-module clock_divisor(
-    input wire clk,
-    output wire clk_25MHz, // 2^-2
-    output wire clk_2KHz   // 2^-16
-);
-    reg [15:0] num;
-
-    always @(posedge clk) begin
-        num <= num + 16'b1;
-    end
-
-    assign clk_25MHz = num[1];
-    assign clk_2KHz = num[15];
-endmodule
-
-module extending_signal(clk, in, out);
-    input clk;
-    input in;
-    output out;
-
-    reg [2:0] counter;
-
-    always @(posedge clk) begin
-        if(in) begin
-            counter <= 3'b111;
-        end 
-        else begin
-            counter <= counter[2] ? counter - 1 : counter;
-        end
-    end
-    assign out = counter[2];
 endmodule
