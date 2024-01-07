@@ -73,6 +73,7 @@ module recognizer_core (
 // FSM
     reg [3:0] state, state_next;
     reg [8:0] subcounter;
+    reg [8:0] subcounter_max;
     reg [17:0] counter;
     parameter S_IDLE   = 4'b0000;
     parameter S_READ   = 4'b0001; parameter T_READ   = 18'd1023;  // input: (32, 32, 1)
@@ -103,7 +104,6 @@ module recognizer_core (
         endcase
     end
 
-    reg [8:0] subcounter_max;
     always @(*) begin
         case (state)
             S_IDLE:   subcounter_max <= 9'd0;

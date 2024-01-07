@@ -67,8 +67,8 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 # set_property -dict { PACKAGE_PIN U18   IOSTANDARD LVCMOS33 } [get_ports btnC]
 # set_property -dict { PACKAGE_PIN T18   IOSTANDARD LVCMOS33 } [get_ports btnU]
 # set_property -dict { PACKAGE_PIN W19   IOSTANDARD LVCMOS33 } [get_ports btnL]
-set_property -dict {PACKAGE_PIN T17 IOSTANDARD LVCMOS33} [get_ports send_data]
-set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports rst]
+set_property -dict {PACKAGE_PIN T17 IOSTANDARD LVCMOS33} [get_ports send];#Sch name = btnR
+set_property -dict {PACKAGE_PIN U17 IOSTANDARD LVCMOS33} [get_ports rst];#Sch name = btnD
 
 
 ##Pmod Header JA
@@ -130,7 +130,8 @@ set_property -dict {PACKAGE_PIN R19 IOSTANDARD LVCMOS33} [get_ports vsync]
 
 
 ##USB-RS232 Interface
-
+# set_property -dict { PACKAGE_PIN B18   IOSTANDARD LVCMOS33 } [get_ports RsRx]
+set_property -dict { PACKAGE_PIN A18   IOSTANDARD LVCMOS33 } [get_ports RsTx]
 
 ##USB HID (PS/2)
 set_property PACKAGE_PIN C17 [get_ports PS2_CLK]

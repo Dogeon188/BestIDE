@@ -1,17 +1,18 @@
 module top(
     input clk,
     input rst,
-    input send_data,
+    input send,
     output [3:0] vgaRed,
     output [3:0] vgaGreen,
     output [3:0] vgaBlue,
     output hsync,
     output vsync,
+    output RsTx,
     inout wire PS2_CLK,
     inout wire PS2_DATA
 );
 
-    wire clk_25MHz;
+    wire clk_25MHz, clk_2KHz;
     wire valid;
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
@@ -29,11 +30,11 @@ module top(
     wire [11:0] mouse_pixel = {mouse_cursor_red, mouse_cursor_green, mouse_cursor_blue};
     assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel_color:12'h0;
     wire [8:0] writing_block_pos;
-    wire [7:0] UART_out_data;
     wire block_editing;
-    wire [9:0] UART_out_addr = 0; 
-    wire UART_enable_read = 0;
-    wire UART_done = 0;
+    wire [7:0] UART_read_data;
+    wire UART_read_en;
+    wire [9:0] UART_read_addr; 
+    wire UART_done;
     wire ready_to_clear_canvas;
     wire [9:0] small_canvas_addr;
     wire [6:0] font_index;
@@ -41,6 +42,7 @@ module top(
     wire recognizer_read_in_data;
     wire mouse_write_enable;
     wire rst_debounced, rst_onepulse, rst_extending_signal;
+    wire send_debounced, send_onepulse;
     wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
@@ -53,9 +55,15 @@ module top(
     wire recognizer_pending;
     
     debounce debounce_inst(
-        .clk(clk),
+        .clk(clk_2KHz),
         .in(rst),
         .out(rst_debounced)
+    );
+
+    debounce debounce_inst2(
+        .clk(clk_2KHz),
+        .in(send),
+        .out(send_debounced)
     );
 
     onepulse onepulse_inst(
@@ -65,6 +73,12 @@ module top(
     );
 
     onepulse onepulse_inst2(
+        .clk(clk),
+        .in(send_debounced),
+        .out(send_onepulse)
+    );
+
+    onepulse onepulse_inst3(
         .clk(clk),
         .in(MOUSE_MIDDLE),
         .out(MOUSE_MIDDLE_onepulse)
@@ -78,7 +92,8 @@ module top(
 
     clock_divisor clk_wiz_0_inst(
         .clk(clk),
-        .clk_25MHz(clk_25MHz)
+        .clk_25MHz(clk_25MHz),
+        .clk_2KHz(clk_2KHz)
     );
 
     pixel_gen pixel_gen_inst(
@@ -132,8 +147,8 @@ module top(
         .write_addr(writing_block_pos),
         .write_in_data(doc_write_in_data),
         .write_ready(ready_to_clear_canvas),
-        .read_enable(UART_enable_read),
-        .read_out_addr(UART_out_addr),
+        .read_enable(UART_read_en),
+        .read_out_addr(UART_read_addr),
         .clear_data(UART_done),
         .enable_word_display(enable_word_display),
         .mouse_block_pos({MOUSE_Y_POS[8:5], MOUSE_X_POS[9:5]}),
@@ -154,9 +169,20 @@ module top(
         .d(text_write),
         .dpra({v_cnt[8:5], h_cnt[9:5]}),
         .we(doc_we),
-        .spo(UART_out_data),
+        .spo(UART_read_data),
         .dpo(font_index),
         .clk(clk)
+    );
+
+    messenger messenger_inst(
+        .clk(clk),
+        .reset(rst_onepulse),
+        .send(send_onepulse),
+        .read_data(UART_read_data),
+        .read_en(UART_read_en),
+        .read_addr(UART_read_addr),
+        .done(UART_done),
+        .RsTx(RsTx)
     );
 
     small_canvas sc(
@@ -264,15 +290,15 @@ endmodule
 
 module clock_divisor(
     input wire clk,
-    output wire clk_25MHz
+    output wire clk_25MHz, // 2^-2
+    output wire clk_2KHz   // 2^-16
 );
-
-    reg [1:0] num;
-    wire [1:0] next_num = num + 1'b1;
+    reg [15:0] num;
 
     always @(posedge clk) begin
-        num <= next_num;
+        num <= num + 16'b1;
     end
 
     assign clk_25MHz = num[1];
+    assign clk_2KHz = num[15];
 endmodule
