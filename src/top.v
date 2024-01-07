@@ -2,6 +2,7 @@ module top(
     input clk,
     input rst,
     input send_data,
+    input clear_data,
     output [3:0] vgaRed,
     output [3:0] vgaGreen,
     output [3:0] vgaBlue,
@@ -12,6 +13,7 @@ module top(
 );
 
     wire clk_25MHz;
+    wire clear_data_debounced, clear_data_onepulse;
     wire valid;
     reg isX, isX_next;
     wire [9:0] h_cnt; //640
@@ -21,7 +23,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse, extended_MOUSE_NEW_EVENT;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -40,7 +42,7 @@ module top(
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse, rst_extending_signal;
+    wire rst_debounced, rst_onepulse;
     wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
@@ -52,28 +54,34 @@ module top(
     wire [7:0] doc_write_in_data;
     wire recognizer_pending;
     
-    debounce debounce_inst(
+    debounce debounce_rst(
         .clk(clk),
         .in(rst),
         .out(rst_debounced)
     );
 
-    onepulse onepulse_inst(
+    onepulse onepulse_rst(
         .clk(clk),
         .in(rst_debounced),
         .out(rst_onepulse)
     );
 
-    onepulse onepulse_inst2(
+    onepulse onepulse_MOUSE_MIDDLE(
         .clk(clk),
         .in(MOUSE_MIDDLE),
         .out(MOUSE_MIDDLE_onepulse)
     );
 
-    extending_signal extending_signal_inst(
-        .clk(~clk),
-        .in(rst_onepulse),
-        .out(rst_extending_signal)
+    debounce debounce_clear_data(
+        .clk(clk),
+        .in(clear_data),
+        .out(clear_data_debounced)
+    );
+
+    onepulse onepulse_clear_data(
+        .clk(clk),
+        .in(clear_data_debounced),
+        .out(clear_data_onepulse)
     );
 
     clock_divisor clk_wiz_0_inst(
@@ -134,7 +142,7 @@ module top(
         .write_ready(ready_to_clear_canvas),
         .read_enable(UART_enable_read),
         .read_out_addr(UART_out_addr),
-        .clear_data(UART_done),
+        .clear_data(clear_data_onepulse || rst_onepulse),
         .enable_word_display(enable_word_display),
         .mouse_block_pos({MOUSE_Y_POS[8:5], MOUSE_X_POS[9:5]}),
         .a(doc_a),
@@ -171,7 +179,7 @@ module top(
     
     vga_controller vga_inst(
       .pclk(clk_25MHz),
-      .reset(rst_extending_signal),
+      .reset(rst_onepulse),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
@@ -214,25 +222,6 @@ module top(
         end
     end
       
-endmodule
-
-
-module extending_signal(clk, in, out);
-    input clk;
-    input in;
-    output out;
-
-    reg [2:0] counter;
-
-    always @(posedge clk) begin
-        if(in) begin
-            counter <= 3'b111;
-        end 
-        else begin
-            counter <= counter[2] ? counter - 1 : counter;
-        end
-    end
-    assign out = counter[2];
 endmodule
 
 module debounce(clk, in, out);
