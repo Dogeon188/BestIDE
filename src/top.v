@@ -87,7 +87,7 @@ module top(
     );
 
     debounce debounce_clear_data(
-        .clk(clk),
+        .clk(clk_2KHz),
         .in(clear_data),
         .out(clear_data_debounced)
     );
