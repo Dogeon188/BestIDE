@@ -24,7 +24,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_MIDDLE_onepulse;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_RIGHT_onepulse;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -74,16 +74,10 @@ module top(
         .out(rst_onepulse)
     );
 
-    onepulse onepulse_inst2(
+    onepulse onepulse_MOUSE_RIGHT(
         .clk(clk),
-        .in(send_debounced),
-        .out(send_onepulse)
-    );
-
-    onepulse onepulse_MOUSE_MIDDLE(
-        .clk(clk),
-        .in(MOUSE_MIDDLE),
-        .out(MOUSE_MIDDLE_onepulse)
+        .in(MOUSE_RIGHT),
+        .out(MOUSE_RIGHT_onepulse)
     );
 
     debounce debounce_clear_data(
@@ -132,7 +126,7 @@ module top(
         .MOUSE_X_POS(MOUSE_X_POS),
         .MOUSE_Y_POS(MOUSE_Y_POS),
         .MOUSE_LEFT(MOUSE_LEFT & ~recognizer_pending),
-        .MOUSE_RIGHT(MOUSE_RIGHT & ~recognizer_pending),
+        .MOUSE_MIDDLE(MOUSE_MIDDLE & ~recognizer_pending),
         .new_event(MOUSE_NEW_EVENT),
         .ready_to_clear_canvas(ready_to_clear_canvas),
         .write_addr(write_addr),
@@ -145,7 +139,7 @@ module top(
     recognizer recognizer_inst(
         .clk(clk),
         .rst(rst_onepulse),
-        .in_start(MOUSE_MIDDLE_onepulse & block_editing),
+        .in_start(MOUSE_RIGHT_onepulse & block_editing),
         .read_data(recognizer_read_in_data),
         .read_addr(read_out_canvas_addr),
         .read_enable(canvas_read_enable),
@@ -167,7 +161,7 @@ module top(
         .enable_word_display(enable_word_display),
         .mouse_block_pos({MOUSE_Y_POS[8:5], MOUSE_X_POS[9:5]}),
         .a(doc_a),
-        .MOUSE_RIGHT(MOUSE_RIGHT & ~recognizer_pending),
+        .MOUSE_MIDDLE(MOUSE_MIDDLE & ~recognizer_pending),
         .editing(block_editing),
         .text_write(text_write),
         .we(doc_we)

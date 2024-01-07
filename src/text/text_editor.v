@@ -6,7 +6,7 @@ module text_editor(
     input write_ready, read_enable,
     input [8:0] read_out_addr,
     input clear_data,
-    input MOUSE_RIGHT,
+    input MOUSE_MIDDLE,
     input editing,
     input [8:0] mouse_block_pos,
     output wire enable_word_display,
@@ -18,7 +18,7 @@ module text_editor(
     reg [19:0] is_written [14:0];
     reg [8:0] counter;
     assign enable_word_display = is_written[vga_block[8:5]][vga_block[4:0]];
-    assign we = !read_enable && (MOUSE_RIGHT || clear_data || rst || counter || write_ready);
+    assign we = !read_enable && (MOUSE_MIDDLE || clear_data || rst || counter || write_ready);
     always @(*) begin
         if(we) begin
             if(clear_data || rst) begin
@@ -37,7 +37,7 @@ module text_editor(
                 a = mouse_block_pos;
                 text_write = 8'd0;
             end
-            else if(MOUSE_RIGHT) begin
+            else if(MOUSE_MIDDLE) begin
                 a = write_addr;
                 text_write = 8'd0;
             end
@@ -82,7 +82,7 @@ module text_editor(
             is_written[13] <= 20'd0;
             is_written[14] <= 20'd0;
         end
-        else if (MOUSE_RIGHT) begin
+        else if (MOUSE_MIDDLE) begin
             if(editing) begin
                 is_written[write_addr[8:5]][write_addr[4:0]] <= 0;
             end
