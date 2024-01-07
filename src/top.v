@@ -43,8 +43,8 @@ module top(
     wire [9:0] read_out_canvas_addr;
     wire recognizer_read_in_data;
     wire mouse_write_enable;
-    wire rst_debounced, rst_onepulse;
     wire send_debounced, send_onepulse;
+    wire rst_debounced, rst_onepulse, rst_extended;
     wire canvas_read_enable;
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
@@ -96,6 +96,12 @@ module top(
         .clk(clk),
         .in(clear_data_debounced),
         .out(clear_data_onepulse)
+    );
+
+    extending_signal extending_signal_rst(
+        .clk(clk),
+        .in(rst_onepulse),
+        .out(rst_extended)
     );
 
     clock_divisor clk_wiz_0_inst(
@@ -205,7 +211,7 @@ module top(
     
     vga_controller vga_inst(
       .pclk(clk_25MHz),
-      .reset(rst_onepulse),
+      .reset(rst_extended),
       .hsync(hsync),
       .vsync(vsync),
       .valid(valid),
@@ -290,4 +296,22 @@ module clock_divisor(
 
     assign clk_25MHz = num[1];
     assign clk_2KHz = num[15];
+endmodule
+
+module extending_signal(clk, in, out);
+    input clk;
+    input in;
+    output out;
+
+    reg [2:0] counter;
+
+    always @(posedge clk) begin
+        if(in) begin
+            counter <= 3'b111;
+        end 
+        else begin
+            counter <= counter[2] ? counter - 1 : counter;
+        end
+    end
+    assign out = counter[2];
 endmodule
