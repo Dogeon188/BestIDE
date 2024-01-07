@@ -56,16 +56,22 @@ module top(
     wire [7:0] doc_write_in_data;
     wire recognizer_pending;
     
-    debounce debounce_inst(
+    debounce debounce_rst(
         .clk(clk_2KHz),
         .in(rst),
         .out(rst_debounced)
     );
 
-    debounce debounce_inst2(
+    debounce debounce_send(
         .clk(clk_2KHz),
         .in(send),
         .out(send_debounced)
+    );
+    
+    onepulse onepulse_send(
+        .clk(clk),
+        .in(send_debounced),
+        .out(send_onepulse)
     );
 
     onepulse onepulse_rst(
