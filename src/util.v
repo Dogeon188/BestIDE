@@ -28,16 +28,16 @@ endmodule
 module clock_divisor(
     input wire clk,
     output wire clk_25MHz, // 2^-2
-    output wire clk_2KHz   // 2^-16
+    output wire clk_400Hz   // 2^-18
 );
-    reg [15:0] num;
+    reg [17:0] num;
 
     always @(posedge clk) begin
-        num <= num + 16'b1;
+        num <= num + 18'b1;
     end
 
     assign clk_25MHz = num[1];
-    assign clk_2KHz = num[15];
+    assign clk_400Hz = num[17];
 endmodule
 
 module extending_signal(clk, in, out);

@@ -180,7 +180,7 @@ module recognizer_core (
     end
 
     wire signed [(9 * `PARSIZE) - 1 : 0] read_conv_weights_flat;
-    wire signed [`DATSIZE - 1 : 0] read_conv_weights [8:0];
+    wire signed [`PARSIZE - 1 : 0] read_conv_weights [8:0];
     generate
         genvar i;
         for (i = 0; i < 9; i = i + 1) begin : read_conv_weights_gen

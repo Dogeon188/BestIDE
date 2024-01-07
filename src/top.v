@@ -13,7 +13,7 @@ module top(
     inout wire PS2_DATA
 );
 
-    wire clk_25MHz, clk_2KHz;
+    wire clk_25MHz, clk_400Hz;
     wire clear_data_debounced, clear_data_onepulse;
     wire valid;
     reg isX, isX_next;
@@ -57,13 +57,13 @@ module top(
     wire recognizer_pending;
     
     debounce debounce_rst(
-        .clk(clk_2KHz),
+        .clk(clk_400Hz),
         .in(rst),
         .out(rst_debounced)
     );
 
     debounce debounce_send(
-        .clk(clk_2KHz),
+        .clk(clk_400Hz),
         .in(send),
         .out(send_debounced)
     );
@@ -93,7 +93,7 @@ module top(
     );
 
     debounce debounce_clear_data(
-        .clk(clk_2KHz),
+        .clk(clk_400Hz),
         .in(clear_data),
         .out(clear_data_debounced)
     );
@@ -113,7 +113,7 @@ module top(
     clock_divisor clk_wiz_0_inst(
         .clk(clk),
         .clk_25MHz(clk_25MHz),
-        .clk_2KHz(clk_2KHz)
+        .clk_400Hz(clk_400Hz)
     );
 
     pixel_gen pixel_gen_inst(
