@@ -144,7 +144,7 @@ module feat_buf_pool (
     input wire write_en, // when state is CONV1(01), CONV2(10), CONV3(11)
     input wire [4 : 0] write_y,
     input wire [4 : 0] write_x,
-    input wire [5 : 0] write_c,
+    input wire [6 : 0] write_c,
     input wire [`DATSIZE - 1 : 0] write_data,
     input wire read_en, // when state is POOL1(01), POOL2(10), POOL3(00)
     input wire [5 : 0] read_y, read_x, // pooled x & y
