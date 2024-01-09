@@ -8,11 +8,11 @@ module vga_controller
     input wire pclk,reset,
     output wire hsync,vsync,valid,
     output wire [9:0]h_cnt,
-    output wire [8:0]v_cnt
+    output wire [9:0]v_cnt
     );
     
     reg [9:0]pixel_cnt;
-    reg [8:0]line_cnt;
+    reg [9:0]line_cnt;
     reg hsync_i,vsync_i;
     wire hsync_default, vsync_default;
     wire [9:0] HD, HF, HS, HT, VD, VF, VS, VT;
@@ -67,6 +67,6 @@ module vga_controller
     assign valid = ((pixel_cnt < HD) && (line_cnt < VD));
     
     assign h_cnt = (pixel_cnt < HD) ? pixel_cnt:10'd0;
-    assign v_cnt = (line_cnt < VD) ? line_cnt:9'd0;
+    assign v_cnt = (line_cnt < VD) ? line_cnt:10'd0;
            
 endmodule
