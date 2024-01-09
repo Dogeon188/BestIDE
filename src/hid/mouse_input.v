@@ -234,6 +234,18 @@ module canva_input(
             next_draw_x_pos = end_x_pos;
             next_draw_y_pos = end_y_pos;
         end
+        default: begin
+            next_state = WAIT;
+            next_pre_x_pos = end_x_pos;
+            next_pre_y_pos = end_y_pos;
+            next_end_x_pos = end_x_pos;
+            next_end_y_pos = end_y_pos;
+            next_delta_x = 0;
+            next_delta_y = 0;
+            next_D = 0;
+            next_draw_x_pos = end_x_pos;
+            next_draw_y_pos = end_y_pos;
+        end
         endcase
     end
 endmodule
