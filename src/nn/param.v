@@ -6,7 +6,8 @@ module conv_weights (
     input wire clk,
     input wire en,
     input wire [3 : 0] state,
-    input wire [5 : 0] read_c, read_o,
+    input wire [4 : 0] read_c,
+    input wire [5 : 0] read_o,
     output wire signed [9 * `PARSIZE - 1 : 0] data
 );
     // write address conversion

@@ -223,22 +223,22 @@ module recognizer_core (
             S_CONV1: begin // output (32, 32, 16)
                 pm_conv_weight_en <= 1'b1;
                 pm_conv_weight_o <= {2'b0, counter[13:10]};
-                pm_conv_weight_c <= 6'b0;
+                pm_conv_weight_c <= 5'b0;
             end
             S_CONV2: begin // output (16, 16, 32)
                 pm_conv_weight_en <= 1'b1;
                 pm_conv_weight_o <= {1'b0, counter[16:12]};
-                pm_conv_weight_c <= {2'b0, counter[3:0]};
+                pm_conv_weight_c <= {1'b0, counter[3:0]};
             end
             S_CONV3: begin // output (8, 8, 64)
                 pm_conv_weight_en <= 1'b1;
                 pm_conv_weight_o <= counter[16:11];
-                pm_conv_weight_c <= {1'b0, counter[4:0]};
+                pm_conv_weight_c <= counter[4:0];
             end
             default: begin
                 pm_conv_weight_en <= 1'b0;
                 pm_conv_weight_o <= 6'd0;
-                pm_conv_weight_c <= 6'd0;
+                pm_conv_weight_c <= 5'd0;
             end
         endcase
     end
@@ -327,8 +327,9 @@ module recognizer_core (
 
 // feature map buffers
     reg fb_conv_write_en, fb_conv_read_en;
-    reg [4 : 0] fb_conv_write_y, fb_conv_write_x;
-    reg [7 : 0] fb_conv_write_c;
+    reg [4 : 0] fb_conv_write_y;
+    reg [4 : 0] fb_conv_write_x;
+    reg [5 : 0] fb_conv_write_c;
     reg signed [`DATSIZE - 1 : 0] fb_conv_write_data;
     reg [5 : 0] fb_conv_read_y, fb_conv_read_x;
     reg [7 : 0] fb_conv_read_c;
@@ -336,10 +337,13 @@ module recognizer_core (
     wire signed [`DATSIZE - 1 : 0] fb_conv_read_data;
 
     reg fb_pool_write_en, fb_pool_read_en;
-    reg [5 : 0] fb_pool_write_y, fb_pool_write_x;
+    reg [4 : 0] fb_pool_write_y;
+    reg [4 : 0] fb_pool_write_x;
     reg [6 : 0] fb_pool_write_c;
     reg signed [`DATSIZE - 1 : 0] fb_pool_write_data;
-    reg [5 : 0] fb_pool_read_y, fb_pool_read_x, fb_pool_read_c;
+    reg [3 : 0] fb_pool_read_y;
+    reg [3 : 0] fb_pool_read_x;
+    reg [5 : 0] fb_pool_read_c;
     reg fb_pool_read_updown;
     wire signed [`DATSIZE - 1 : 0] fb_pool_read_data [1:0];
 
@@ -422,36 +426,36 @@ module recognizer_core (
         case (state)
             S_CONV1: begin // output (32, 32, 1)
                 fb_conv_read_en <= (subcounter < subcounter_max);
-                fb_conv_read_y <= {1'b0, counter[9:5]};
-                fb_conv_read_x <= {1'b0, counter[4:0]};
+                fb_conv_read_y <= counter[9:5];
+                fb_conv_read_x <= counter[4:0];
                 fb_conv_read_c <= 8'd0;
                 fb_conv_read_s <= subcounter[3:0];
             end
             S_CONV2: begin // output (16, 16, 16)
                 fb_conv_read_en <= (subcounter < subcounter_max);
-                fb_conv_read_y <= {1'b0, counter[11:8]};
-                fb_conv_read_x <= {1'b0, counter[7:4]};
+                fb_conv_read_y <= counter[11:8];
+                fb_conv_read_x <= counter[7:4];
                 fb_conv_read_c <= {4'b0, counter[3:0]};
                 fb_conv_read_s <= subcounter[3:0];
             end
             S_CONV3: begin // output (8, 8, 32)
                 fb_conv_read_en <= (subcounter < subcounter_max);
-                fb_conv_read_y <= {3'b0, counter[10:8]};
-                fb_conv_read_x <= {3'b0, counter[7:5]};
+                fb_conv_read_y <= {2'b0, counter[10:8]};
+                fb_conv_read_x <= {2'b0, counter[7:5]};
                 fb_conv_read_c <= {3'b0, counter[4:0]};
                 fb_conv_read_s <= subcounter[3:0];
             end
             S_DENSE2: begin // output (256)
                 fb_conv_read_en <= 1'b1;
-                fb_conv_read_y <= 6'd0;
-                fb_conv_read_x <= 6'd0;
+                fb_conv_read_y <= 5'd0;
+                fb_conv_read_x <= 5'd0;
                 fb_conv_read_c <= subcounter[7:0];
                 fb_conv_read_s <= 1'b0;
             end
             default: begin
                 fb_conv_read_en <= 1'b0;
-                fb_conv_read_y <= 6'd0;
-                fb_conv_read_x <= 6'd0;
+                fb_conv_read_y <= 5'd0;
+                fb_conv_read_x <= 5'd0;
                 fb_conv_read_c <= 8'd0;
                 fb_conv_read_s <= 4'd0;
             end
@@ -510,22 +514,22 @@ module recognizer_core (
         case (state)
             S_CONV1: begin // input (32, 32, 16)
                 fb_pool_write_en <= (subcounter == subcounter_max);
-                fb_pool_write_y <= {1'b0, counter[9:5]};
-                fb_pool_write_x <= {1'b0, counter[4:0]};
+                fb_pool_write_y <= counter[9:5];
+                fb_pool_write_x <= counter[4:0];
                 fb_pool_write_c <= {3'b0, counter[13:10]};
                 fb_pool_write_data <= acc_out[0] + pm_conv_bias;
             end
             S_CONV2: begin // input (16, 16, 32)
                 fb_pool_write_en <= (subcounter == subcounter_max) && (counter[3:0] == 4'd15);
-                fb_pool_write_y <= {2'b0, counter[11:8]};
-                fb_pool_write_x <= {2'b0, counter[7:4]};
+                fb_pool_write_y <= {1'b0, counter[11:8]};
+                fb_pool_write_x <= {1'b0, counter[7:4]};
                 fb_pool_write_c <= {2'b0, counter[16:12]};
                 fb_pool_write_data <= acc_out[0] + pm_conv_bias;
             end
             S_CONV3: begin // input (8, 8, 64)
                 fb_pool_write_en <= (subcounter == subcounter_max) && (counter[4:0] == 5'd31);
-                fb_pool_write_y <= {3'b0, counter[10:8]};
-                fb_pool_write_x <= {3'b0, counter[7:5]};
+                fb_pool_write_y <= {2'b0, counter[10:8]};
+                fb_pool_write_x <= {2'b0, counter[7:5]};
                 fb_pool_write_c <= {1'b0, counter[16:11]};
                 fb_pool_write_data <= acc_out[0] + pm_conv_bias;
             end
@@ -551,36 +555,36 @@ module recognizer_core (
         case (state)
             S_POOL1: begin // output (32, 32, 16) -> (16, 16, 16)
                 fb_pool_read_en <= subcounter[1:0] == 2'd0 || subcounter[1:0] == 2'd1;
-                fb_pool_read_y <= {2'b0, counter[7:4]};
-                fb_pool_read_x <= {2'b0, counter[3:0]};
+                fb_pool_read_y <= counter[7:4];
+                fb_pool_read_x <= counter[3:0];
                 fb_pool_read_c <= {2'b0, counter[11:8]};
                 fb_pool_read_updown <= subcounter[0];
             end
             S_POOL2: begin // output (16, 16, 32)
                 fb_pool_read_en <= subcounter[1:0] == 2'd0 || subcounter[1:0] == 2'd1;
-                fb_pool_read_y <= {3'b0, counter[5:3]};
-                fb_pool_read_x <= {3'b0, counter[2:0]};
+                fb_pool_read_y <= {1'b0, counter[5:3]};
+                fb_pool_read_x <= {1'b0, counter[2:0]};
                 fb_pool_read_c <= {1'b0, counter[10:6]};
                 fb_pool_read_updown <= subcounter[0];
             end
             S_POOL3: begin // output (8, 8, 64)
                 fb_pool_read_en <= subcounter[1:0] == 2'd0 || subcounter[1:0] == 2'd1;
-                fb_pool_read_y <= {4'b0, counter[1], subcounter[3]};
-                fb_pool_read_x <= {4'b0, counter[0], subcounter[2]};
+                fb_pool_read_y <= {2'b0, counter[1], subcounter[3]};
+                fb_pool_read_x <= {2'b0, counter[0], subcounter[2]};
                 fb_pool_read_c <= counter[7:2];
                 fb_pool_read_updown <= subcounter[0];
             end
             S_DENSE1: begin // output (96)
                 fb_pool_read_en <= 1'b1;
-                fb_pool_read_y <= 6'd0;
-                fb_pool_read_x <= 6'd0;
+                fb_pool_read_y <= 4'd0;
+                fb_pool_read_x <= 4'd0;
                 fb_pool_read_c <= subcounter[6:1];
                 fb_pool_read_updown <= 1'b0;
             end
             default: begin
                 fb_pool_read_en <= 1'b0;
-                fb_pool_read_y <= 6'd0;
-                fb_pool_read_x <= 6'd0;
+                fb_pool_read_y <= 4'd0;
+                fb_pool_read_x <= 4'd0;
                 fb_pool_read_c <= 6'd0;
                 fb_pool_read_updown <= 1'd0;
             end
