@@ -16,7 +16,6 @@ module top(
     wire clk_25MHz, clk_400Hz;
     wire clear_data_debounced, clear_data_onepulse;
     wire valid;
-    reg isX, isX_next;
     wire [9:0] h_cnt; //640
     wire [8:0] v_cnt;  //480
     wire [9:0] pixel_addr = {v_cnt[4:0], h_cnt[4:0]};
@@ -242,22 +241,5 @@ module top(
         .PS2_CLK(PS2_CLK),
         .PS2_DATA(PS2_DATA)
     );
-
-    always@(posedge clk)begin
-        if(rst) begin
-            isX <= 1'b1;
-        end else begin
-            isX <= isX_next;
-        end
-    end
-    
-    always@(*) begin
-        isX_next = isX;
-        if(MOUSE_LEFT) begin
-            isX_next = 1'b1;
-        end else if(MOUSE_RIGHT) begin
-            isX_next = 1'b0;
-        end
-    end
       
 endmodule
