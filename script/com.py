@@ -69,7 +69,7 @@ with serial.Serial(
                         except Exception as e:
                             print(colored('Error:', "light_red"), colored(e, "red"))
                         read_bytes = bytes()
-                        print(colored(">>> ", "dark_grey", attrs=["blink"]), end='', flush=True)
+                        print(colored(">>> ", "dark_grey"), end='', flush=True)
                     else:
                         read_bytes += bytes([b])
             sleep(0.01)
