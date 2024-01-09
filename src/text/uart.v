@@ -130,7 +130,7 @@ module uart_top (
 );
 
     wire tx_baud_en, tx_baud;
-    wire rx_baud_en, rx_baud;
+    // wire rx_baud_en, rx_baud;
     baud_gen bg (
         .clk(clk),
         .reset(reset),
@@ -239,7 +239,6 @@ module uart_tx (
     reg [1:0] state;
     reg [9:0] tx_shift_reg;
     reg [3:0] tx_bit_cnt;
-    reg tx_out_reg;
 
     parameter S_IDLE = 2'b00;
     parameter S_SEND = 2'b01;
@@ -291,7 +290,6 @@ module uart_tx (
                         tx_shift_reg <= tx_shift_reg;
                         tx_bit_cnt <= tx_bit_cnt;
                     end
-
                 end
             endcase
         end
