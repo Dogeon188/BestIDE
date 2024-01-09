@@ -61,13 +61,16 @@ with serial.Serial(
                     if b == start_byte:
                         read_bytes = bytes()
                     elif b == end_byte:
-                        dec = read_bytes.decode('ascii').strip()
-                        dec = re.sub('\\s+(?=([^"\']*["\'][^"\']*["\'])*[^"\']*$)', " ", dec)
-                        print(highlight(dec), end='')
+                        dec = read_bytes.decode('ascii')
+                        dec_lines = list(map(lambda x: x.rstrip(), [dec[i:i+20] for i in range(0, 300, 20)]))
+                        dec_lines = list(filter(lambda x: x != '', dec_lines))
+                        dec_print = list(map(highlight, dec_lines))
+                        dec_print = (colored("... ", "dark_grey")).join(dec_print)
+                        print(dec_print, end='')
                         try:
-                            run_code(dec)
+                            run_code('\n'.join(dec_lines))
                         except Exception as e:
-                            print(colored('Error:', "light_red"), colored(e, "red"))
+                            print(colored('Error:', "light_red"), colored(e, "light_red"))
                         read_bytes = bytes()
                         print(colored(">>> ", "dark_grey"), end='', flush=True)
                     else:
@@ -77,3 +80,5 @@ with serial.Serial(
         print(colored('\nInterrupted by user. Exiting...', "cyan"))
     except Exception as e:
         print(colored('Port closed. Exiting...', "cyan"))
+    finally:
+        ser.close()
