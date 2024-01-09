@@ -5,7 +5,6 @@ module messenger (
     input [7 : 0] read_data,
     output wire read_en,
     output wire [9 : 0] read_addr,
-    output wire done,
     output wire RsTx
 );
     parameter SIGACK = 8'hCC;
@@ -99,8 +98,6 @@ module messenger (
             endcase
         end
     end
-
-    assign done = state == S_DONE;
     assign read_en = state == S_READ;
     assign read_addr = {read_y, read_x};
 
