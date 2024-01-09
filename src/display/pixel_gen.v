@@ -9,8 +9,8 @@ module pixel_gen(
     input word_pixel,
     input [8:0] writing_block_pos,
     input editing,
-    input [9:0] MOUSE_X_POS,
-    input [8:0] MOUSE_Y_POS,
+    input [4:0] MOUSE_X_POS_block,
+    input [3:0] MOUSE_Y_POS_block,
     output reg [11:0] pixel_color
 );
 
@@ -33,7 +33,7 @@ always@(*) begin
         end
     end
     else if(h_cnt[4:0] == 0 || h_cnt[4:0] == 31 || v_cnt[4:0] == 0 || v_cnt[4:0] == 31) begin
-        if(!editing && h_cnt[9:5] == MOUSE_X_POS[9:5] && v_cnt[8:5] == MOUSE_Y_POS[8:5]) begin
+        if(!editing && h_cnt[9:5] == MOUSE_X_POS_block && v_cnt[8:5] == MOUSE_Y_POS_block) begin
             pixel_color = 12'h0df;
         end
         else begin

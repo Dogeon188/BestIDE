@@ -120,8 +120,8 @@ module top(
         .canvas_vga_pixel(canvas_vga_pixel),
         .pixel_color(pixel_color),
         .writing_block_pos(writing_block_pos),
-        .MOUSE_X_POS(MOUSE_X_POS),
-        .MOUSE_Y_POS(MOUSE_Y_POS),
+        .MOUSE_X_POS_block(MOUSE_X_POS[9:5]),
+        .MOUSE_Y_POS_block(MOUSE_Y_POS[8:5]),
         .editing(block_editing)
     );
 
