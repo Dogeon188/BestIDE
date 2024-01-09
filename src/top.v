@@ -47,7 +47,6 @@ module top(
     assign small_canvas_addr = canvas_read_enable ? read_out_canvas_addr : write_addr;
     wire word_pixel = font_pixels[h_cnt[4:1]];
     wire [8:0] doc_a;
-    wire [7:0] doc_d;
     wire doc_we;
     wire [7:0] text_write;
     wire canvas_write_enable = mouse_write_enable && ~canvas_read_enable;

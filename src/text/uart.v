@@ -4,7 +4,7 @@ module messenger (
     input wire send,
     input [7 : 0] read_data,
     output wire read_en,
-    output wire [9 : 0] read_addr,
+    output wire [8 : 0] read_addr,
     output wire RsTx
 );
     parameter SIGACK = 8'hCC;

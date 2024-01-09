@@ -43,7 +43,6 @@ module conv_weights (
         end
     end
 
-    wire [9 * `PARSIZE - 1 : 0] doutb; // not used
     mem_conv_w mem (
         .clka(clk),
         .ena(_en),
@@ -52,7 +51,7 @@ module conv_weights (
         .clkb(clk),
         .enb(1'b0),
         .addrb(12'b0),
-        .doutb(doutb)
+        .doutb() // not used
     );
 endmodule
 
@@ -126,7 +125,6 @@ module dense_weights (
         end
     end
 
-    wire [`PARSIZE - 1 : 0] doutb; // not used
     mem_dense_w mem (
         .clka(clk),
         .ena(_en),
@@ -135,7 +133,7 @@ module dense_weights (
         .clkb(clk),
         .enb(1'b0),
         .addrb(16'b0),
-        .doutb(doutb)
+        .doutb() // not used
     );
 endmodule
 

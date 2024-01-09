@@ -15,18 +15,16 @@ module vga_controller
     reg [9:0]line_cnt;
     reg hsync_i,vsync_i;
     wire hsync_default, vsync_default;
-    wire [9:0] HD, HF, HS, HB, HT, VD, VF, VS, VB, VT;
+    wire [9:0] HD, HF, HS, HT, VD, VF, VS, VT;
 
    
     assign HD = 640;
     assign HF = 16;
     assign HS = 96;
-    assign HB = 48;
     assign HT = 800; 
     assign VD = 480;
     assign VF = 10;
     assign VS = 2;
-    assign VB = 33;
     assign VT = 525;
     assign hsync_default = 1'b1;
     assign vsync_default = 1'b1;

@@ -217,7 +217,8 @@ module recognizer_core (
 
 // conv parameter memory
     reg pm_conv_weight_en;
-    reg [5 : 0] pm_conv_weight_o, pm_conv_weight_c;
+    reg [5 : 0] pm_conv_weight_o;
+    reg [4 : 0] pm_conv_weight_c;
     always @(*) begin
         case (state)
             S_CONV1: begin // output (32, 32, 16)
