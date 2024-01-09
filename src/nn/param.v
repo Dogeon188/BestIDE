@@ -109,7 +109,6 @@ module dense_weights (
             addr <= 16'b0;
         end else begin
             case (state)
-                // TODO: check if this is correct
                 4'b1000: begin // DENSE2, 256 -> 96
                     _en <= 1'b1;
                     addr <= SHIFT_DENSE2 + {1'b0, read_o[6 : 0], read_i[7 : 0]};

@@ -21,13 +21,13 @@ module messenger (
 
     reg [3:0] state;
     parameter S_IDLE = 4'b0000;
-    parameter S_ACK  = 4'b0001;
-    parameter S_ACWT = 4'b0010;
-    parameter S_READ = 4'b0011;
-    parameter S_SEND = 4'b0100;
-    parameter S_EOF  = 4'b0101;
-    parameter S_EFWT = 4'b0110;
-    parameter S_DONE = 4'b0111;
+    parameter S_ACK  = 4'b0001; // acknowledge aka starting byte
+    parameter S_ACWT = 4'b0010; // sending acknowledge byte
+    parameter S_READ = 4'b0011; // read data from document memory
+    parameter S_SEND = 4'b0100; // sending document data
+    parameter S_EOF  = 4'b0101; // EOF aka ending byte
+    parameter S_EFWT = 4'b0110; // sending EOF byte
+    parameter S_DONE = 4'b0111; // acknowledge done to top module
 
     always @(posedge clk) begin
         if (reset) begin
@@ -60,7 +60,7 @@ module messenger (
             end
             S_READ: begin
                 tx_data_valid <= 1'b1;
-                tx_data <= read_data + 8'h20;
+                tx_data <= read_data + 8'h20; // convert from internal (biased by 32) to ASCII
             end
             S_EOF: begin
                 tx_data_valid <= 1'b1;
@@ -298,6 +298,7 @@ module uart_tx (
     end
 endmodule
 
+// Baud rate generator
 module baud_gen (
     input wire clk, // 100 MHz
     input wire reset,
@@ -306,7 +307,6 @@ module baud_gen (
     input wire tx_en,
     output wire tx_baud
 );
-    // Baud rate generator
     // reg [8:0] rx_cnt;
     reg [8:0] tx_cnt;
 

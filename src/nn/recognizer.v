@@ -202,7 +202,7 @@ module recognizer_core (
         if (rst) begin
             acc[0] <= 22'd0;
         end else begin
-            if (((subcounter == subcounter_max) && ( // TODO: why not also use subcounter == 1?
+            if (((subcounter == subcounter_max) && ( // why not also use subcounter == 1?
                     (state == S_CONV1) ||
                     (state == S_CONV2 && counter[3:0] == 4'd15) ||
                     (state == S_CONV3 && counter[4:0] == 5'd31))

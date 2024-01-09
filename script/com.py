@@ -28,7 +28,7 @@ available_ports = list_ports.comports()
 
 # exit if no ports are available
 if len(available_ports) == 0:
-    print(colored('No available ports.', "magenta"))
+    print(colored('No available ports. Exiting...', "magenta"))
     exit(1)
 
 print(colored('Available ports:', "cyan"))
@@ -78,7 +78,7 @@ with serial.Serial(
             sleep(0.01)
     except KeyboardInterrupt:
         print(colored('\nInterrupted by user. Exiting...', "cyan"))
-    except Exception as e:
-        print(colored('Port closed. Exiting...', "cyan"))
+    except Exception as e:  # assume port closed and exit
+        print(colored('\nPort closed. Exiting...', "cyan"))
     finally:
         ser.close()
