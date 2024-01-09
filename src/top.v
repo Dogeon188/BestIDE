@@ -35,7 +35,6 @@ module top(
     wire [7:0] UART_read_data;
     wire UART_read_en;
     wire [9:0] UART_read_addr; 
-    wire UART_done;
     wire ready_to_clear_canvas;
     wire [9:0] small_canvas_addr;
     wire [6:0] font_index;
@@ -194,7 +193,6 @@ module top(
         .read_data(UART_read_data),
         .read_en(UART_read_en),
         .read_addr(UART_read_addr),
-        .done(UART_done),
         .RsTx(RsTx)
     );
 
