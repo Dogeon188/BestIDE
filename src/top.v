@@ -23,7 +23,7 @@ module top(
     wire enable_mouse_display, enable_word_display;
     wire mouse_input_data;
     wire [9:0] MOUSE_X_POS , MOUSE_Y_POS;
-    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_RIGHT_debounce, MOUSE_RIGHT_onepulse;
+    wire MOUSE_LEFT , MOUSE_MIDDLE , MOUSE_RIGHT , MOUSE_NEW_EVENT, MOUSE_RIGHT_onepulse;
     wire [3:0] mouse_cursor_red , mouse_cursor_green , mouse_cursor_blue;
     wire canvas_vga_pixel;
     wire [11:0] pixel_color;
@@ -66,12 +66,6 @@ module top(
         .in(send),
         .out(send_debounced)
     );
-
-    debounce debounce_MOUSE_RIGHT(
-        .clk(clk),
-        .in(MOUSE_RIGHT),
-        .out(MOUSE_RIGHT_debounce)
-    );
     
     onepulse onepulse_send(
         .clk(clk),
@@ -87,7 +81,7 @@ module top(
 
     onepulse onepulse_MOUSE_RIGHT(
         .clk(clk),
-        .in(MOUSE_RIGHT_debounce),
+        .in(MOUSE_RIGHT),
         .out(MOUSE_RIGHT_onepulse)
     );
 
