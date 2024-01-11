@@ -65,14 +65,14 @@ with serial.Serial(
                         dec_lines = list(map(lambda x: x.rstrip(), [dec[i:i+20] for i in range(0, 300, 20)]))
                         dec_lines = list(filter(lambda x: x != '', dec_lines))
                         dec_print = list(map(highlight, dec_lines))
-                        dec_print = (colored("... ", "dark_grey")).join(dec_print)
-                        print(dec_print, end='')
+                        dec_print = (colored("... ", "dark_grey")).join(dec_print) # multi-line indent
+                        print(dec_print == '' and "\n" or dec_print, end='') # handle empty input
                         try:
                             run_code('\n'.join(dec_lines))
                         except Exception as e:
                             print(colored('Error:', "light_red"), colored(e, "light_red"))
                         read_bytes = bytes()
-                        print(colored(">>> ", "dark_grey"), end='', flush=True)
+                        print(colored(">>> ", "dark_grey"), end='', flush=True) # prompt
                     else:
                         read_bytes += bytes([b])
             sleep(0.01)

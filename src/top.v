@@ -34,7 +34,7 @@ module top(
     wire block_editing;
     wire [7:0] UART_read_data;
     wire UART_read_en;
-    wire [9:0] UART_read_addr; 
+    wire [8:0] UART_read_addr; 
     wire ready_to_clear_canvas;
     wire [9:0] small_canvas_addr;
     wire [6:0] font_index;
