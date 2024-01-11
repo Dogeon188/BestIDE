@@ -54,10 +54,10 @@ module text_editor(
 
     always @(posedge clk) begin
         if(rst || clear_data) begin
-            counter <= ~9'd0;
+            counter <= 9'd1;
         end
         else if (counter) begin
-            counter <= counter - 1;
+            counter <= counter + 1;
         end
         else begin
             counter <= 9'd0;
