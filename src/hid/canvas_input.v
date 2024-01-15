@@ -1,4 +1,4 @@
-module mouse_input(
+module canvas_input(
     input clk, rst,
     input [9 : 0] MOUSE_X_POS, MOUSE_Y_POS,
     input Mouse_write,clear_block,
@@ -15,14 +15,14 @@ module mouse_input(
     reg [3:0] writing_block_y_pos;
     assign writing_block_pos = {writing_block_y_pos, writing_block_x_pos};
     always @(posedge clk) begin
-        if(rst) begin
-            counter <= 10'b0;
-        end
-        else if(ready_to_clear_canvas || clear_block) begin
-            counter <= ~10'b0;
+        if(rst || ready_to_clear_canvas || clear_block) begin
+            counter <= 10'b1;
         end
         else if(counter) begin
-            counter <= counter - 1;
+            counter <= counter + 1;
+        end
+        else begin
+            counter <= counter;
         end
     end
 
@@ -30,9 +30,6 @@ module mouse_input(
     always @(posedge clk) begin
         if(ready_to_clear_canvas || counter || clear_block) begin
             editing <= 1'b0;
-        end
-        else if(editing) begin
-            editing <= 1'b1;
         end
         else if(new_event && Mouse_write) begin
             editing <= 1'b1;
@@ -43,11 +40,7 @@ module mouse_input(
     end
 
     always @(posedge clk) begin
-        if(editing) begin
-            writing_block_x_pos <= writing_block_x_pos;
-            writing_block_y_pos <= writing_block_y_pos;
-        end
-        else if(new_event && Mouse_write && counter == 10'd0) begin
+        if(!editing && new_event && Mouse_write && counter == 10'd0) begin
             writing_block_x_pos <= MOUSE_X_POS[9:5];
             writing_block_y_pos <= MOUSE_Y_POS[9:5];
         end
@@ -59,11 +52,11 @@ module mouse_input(
     
     wire write_en;
 
-    assign write_enable = ready_to_clear_canvas || clear_block || counter || (write_en && write_addr_x[9:5] == writing_block_x_pos && write_addr_y[9:5] == writing_block_y_pos);
-    assign write_addr = (ready_to_clear_canvas || clear_block) ? 0 : counter ? counter : {write_addr_y[4:0], write_addr_x[4:0]};
+    assign write_enable = rst || ready_to_clear_canvas || clear_block || counter || (write_en && write_addr_x[9:5] == writing_block_x_pos && write_addr_y[9:5] == writing_block_y_pos);
+    assign write_addr = (rst || ready_to_clear_canvas || clear_block) ? 0 : counter ? counter : {write_addr_y[4:0], write_addr_x[4:0]};
     wire canva_write;
-    assign write_data = canva_write & ~clear_block & ~ready_to_clear_canvas && (counter == 0);
-    canva_input cv(
+    assign write_data = write_en & ~rst & ~clear_block & ~ready_to_clear_canvas && (counter == 0);
+    Bresenham Bresenham_inst(
         .clk(clk),
         .rst(rst),
         .MOUSE_X_POS(MOUSE_X_POS[9:0]),
@@ -72,20 +65,18 @@ module mouse_input(
         .new_event(new_event),
         .write_addr_x(write_addr_x),
         .write_addr_y(write_addr_y),
-        .write_enable(write_en),
-        .write_data(canva_write)
+        .write_enable(write_en)
     );
 endmodule
 
 
-module canva_input(
+module Bresenham(
     input clk, rst,
     input [9:0] MOUSE_X_POS, MOUSE_Y_POS,
     input Mouse_write,
     input new_event,
     output [9:0] write_addr_x, write_addr_y,
-    output wire write_enable,
-    output wire write_data
+    output wire write_enable
     );
 
     reg [1:0] state, next_state;
@@ -132,7 +123,6 @@ module canva_input(
         end
     end
     assign write_enable = Mouse_write;
-    assign write_data = Mouse_write;
     wire _start = Mouse_write && (MOUSE_X_POS != end_x_pos || MOUSE_Y_POS != end_y_pos);
     always @(*) begin
         case(state) 

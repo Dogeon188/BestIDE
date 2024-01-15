@@ -123,7 +123,7 @@ module top(
         .editing(block_editing)
     );
 
-    mouse_input mouse_input_inst(
+    canvas_input canvas_input_inst(
         .clk(clk),
         .rst(rst_onepulse),
         .MOUSE_X_POS(MOUSE_X_POS),
@@ -170,12 +170,12 @@ module top(
         .we(doc_we)
     );
     
-    fonts fonts(
+    Fonts fonts(
         .a({font_index, v_cnt[4:1]}),
         .spo(font_pixels)
     );
 
-    document document(
+    Document document(
         .a(doc_a),
         .d(text_write),
         .dpra({v_cnt[8:5], h_cnt[9:5]}),
@@ -195,7 +195,7 @@ module top(
         .RsTx(RsTx)
     );
 
-    small_canvas sc(
+    Canvas canvas(
         .a(small_canvas_addr),
         .d(mouse_input_data),
         .dpra(pixel_addr),
