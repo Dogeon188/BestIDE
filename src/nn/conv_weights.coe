@@ -2,7 +2,6 @@
 ; Name:   mem_conv_w
 ; WidthA: 144
 ; DepthA: 2576
-; WidthB: 144
 
 memory_initialization_radix = 16;
 memory_initialization_vector = 

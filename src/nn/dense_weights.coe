@@ -2,7 +2,6 @@
 ; Name:   mem_dense_w
 ; WidthA: 16
 ; DepthA: 33792
-; WidthB: 16
 
 memory_initialization_radix = 16;
 memory_initialization_vector = 
