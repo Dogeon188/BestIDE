@@ -1,4 +1,4 @@
-; IP:     Block Memory Generator (Dual Port ROM)
+; IP:     Block Memory Generator (Single Port ROM)
 ; Name:   mem_conv_w
 ; WidthA: 144
 ; DepthA: 2576

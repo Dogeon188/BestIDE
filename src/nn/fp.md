@@ -1,4 +1,4 @@
-/* Fixed point format
+Fixed point format
 
 For stored params:
   Tested result: in range -1.5574 to -0.8334
@@ -15,4 +15,3 @@ For intermediate values:
   Range:      -128(-2097152) to 127.999939(2097151)
   Precision:  1/2^14 = 0.00006103515625
   Conversion: fp = int(x * 2^14 + 0.5)
-*/

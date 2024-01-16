@@ -1,6 +1,6 @@
 ; Only for IP configuration purpose
 
 ; IP:     Distributed Memory Generator (Dual Port RAM)
-; Name:   small_canvas
+; Name:   Canvas
 ; Depth:  1024
 ; Data Width: 1

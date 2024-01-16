@@ -47,11 +47,7 @@ module conv_weights (
         .clka(clk),
         .ena(_en),
         .addra(addr),
-        .douta(data),
-        .clkb(clk),
-        .enb(1'b0),
-        .addrb(12'b0),
-        .doutb() // not used
+        .douta(data)
     );
 endmodule
 
@@ -129,11 +125,7 @@ module dense_weights (
         .clka(clk),
         .ena(_en),
         .addra(addr),
-        .douta(data),
-        .clkb(clk),
-        .enb(1'b0),
-        .addrb(16'b0),
-        .doutb() // not used
+        .douta(data)
     );
 endmodule
 
