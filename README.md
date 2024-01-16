@@ -2,6 +2,8 @@
 
 This is the best human-friendly IDE (Integrated development harDware Equipment) for Python,  built for Basys 3 FPGA board.
 
+The details of the CNN-based handwriting recognition model is at [Dogeon188/HandwritingRecognizeUnipen](https://github.com/Dogeon188/HandwritingRecognizeUnipen)
+
 ## Features
 
 - Write your code with only you mouse (and some buttons)!
